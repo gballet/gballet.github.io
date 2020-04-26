@@ -13,5 +13,3 @@ My favorite languages are Assembly, Rust, Ruby and Crystal. I use FreeBSD and vi
 {% for article in site.articles %}
  * [{{article.title}}]({{article.url}})
 {% endfor %}
-
-**PGP key**
