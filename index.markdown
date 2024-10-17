@@ -4,9 +4,9 @@ layout: home
 
 I'm a software engineer building a decentralized world. I want to make life simpler and fairer.
 
-I currently work on [Go-ethereum](https://github.com/ethereum/go-ethereum). I focus on rapid improvements to Ethereum scalability. I am thus pursuing three directions: layer 2, consensus algorithms and database format. I am also looking at interfacing Ethereum 1 with Ethereum 2.
+I currently work on [Go-ethereum](https://github.com/ethereum/go-ethereum). I focus on bridging research and development. I made the first prototype of the merge, and I am now spending most of my time working on [verkle trees](https://verkle.info).
 
-My favorite languages are Assembly, Rust, Ruby and Crystal. I use FreeBSD and vim. Other than that, I love improv comedy, space and discussing weird ideas.
+My favorite languages are Assembly, Zig and Ruby. I use [FreeBSD](https://freebsd.org) and [helix](https://helix-editor.com). Other than that, I love improv comedy, space and discussing weird ideas.
 
 **Articles**
 
