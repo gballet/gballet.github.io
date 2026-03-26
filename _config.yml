@@ -21,7 +21,7 @@
 title: Guillaume Ballet
 email: contact at gballet dot com
 description: >- # this means to ignore newlines until "baseurl:"
-  I'm a software engineer with a focus on decentralization technologies and I ❤ you.
+  Software engineer focused on decentralization technologies.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: gballet
