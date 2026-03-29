@@ -487,7 +487,7 @@ layout: null
     </section>
 
     <!-- ===========================================
-         SLIDE 2: SECTION — Tree Transition
+         SLIDE 2: SECTION — Code Chunking / Binary Trees
          =========================================== -->
     <section class="slide section-slide">
         <div class="corner corner--tl"></div>
@@ -495,31 +495,26 @@ layout: null
         <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
         <div class="slide-content">
             <div class="section-bar reveal-bar"></div>
-            <h2 class="reveal">Tree<br>Transition</h2>
-            <p class="section-desc reveal">Moving Ethereum's state from the Merkle Patricia Tree to a new structure — and how to get there.</p>
+            <h2 class="reveal">Code Chunking<br>&amp; Binary Trees</h2>
+            <p class="section-desc reveal">Restructuring how contract bytecode is stored and accessed in the state tree.</p>
         </div>
         <div class="slide-num">01</div>
     </section>
 
     <!-- ===========================================
-         SLIDE 3: EIP-6800
+         SLIDE 3: EIP-2926
          =========================================== -->
     <section class="slide">
         <div class="corner corner--tl"></div>
         <div class="corner corner--br"></div>
         <div class="accent-block accent-block--tr"></div>
         <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-category reveal">Code Chunking</div>
             <div class="eip-header reveal">
-                <span class="eip-number">6800</span>
-                <span class="eip-title">Ethereum State Using a Unified Verkle Tree</span>
+                <span class="eip-number">2926</span>
+                <span class="eip-title">Chunk-Based Code Merkleization</span>
             </div>
-            <p class="eip-summary reveal">Introduces a Verkle tree alongside the existing Merkle Patricia Tree as the first step toward fully stateless Ethereum.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Reduces witness sizes from ~3 kB/account (18 MB worst-case/block) to ~200 bytes/account</li>
-                <li class="reveal">Uses Bandersnatch-curve Pedersen commitments in a unified key-value structure</li>
-                <li class="reveal">Dual-tree approach: frozen Patricia tree + live Verkle tree during transition</li>
-            </ul>
+            <p class="eip-summary reveal">Splits contract bytecode into 31-byte chunks in a Merkle tree, so stateless clients only fetch the chunks actually accessed.</p>
         </div>
         <div class="slide-num">02</div>
     </section>
@@ -530,117 +525,20 @@ layout: null
     <section class="slide">
         <div class="corner corner--tl"></div>
         <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--small" style="bottom: clamp(4rem, 10vh, 8rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
         <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-category reveal">Binary Trees</div>
             <div class="eip-header reveal">
                 <span class="eip-number">7864</span>
                 <span class="eip-title">Unified Binary Tree for Ethereum State</span>
             </div>
             <p class="eip-summary reveal">Replaces Ethereum's hexary Patricia tries with a single unified binary tree — accounts, storage, and code in one structure.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Designed for ZK-friendliness: enables validity proofs (SNARKs/STARKs) over blocks</li>
-                <li class="reveal">32-byte keys with 31-byte stem + 1-byte sub-index co-locate related data in the same branch</li>
-                <li class="reveal">Uses BLAKE3 for hashing (final choice pending); directly addresses MPT + RLP + Keccak proof costs</li>
-            </ul>
         </div>
         <div class="slide-num">03</div>
     </section>
 
     <!-- ===========================================
-         SLIDE 5: EIP-7612
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--tr"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">7612</span>
-                <span class="eip-title">Verkle State Transition via Overlay Tree</span>
-            </div>
-            <p class="eip-summary reveal">Defines the dual-tree "frozen base" approach: the existing MPT freezes and a new Verkle overlay handles all writes.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Reads check the overlay first, fall back to the frozen MPT — no immediate full migration needed</li>
-                <li class="reveal">Lets the Verkle fork ship without requiring a lengthy upfront state conversion</li>
-                <li class="reveal">Avoids consensus-layer disruptions from converting the entire historical state at once</li>
-            </ul>
-        </div>
-        <div class="slide-num">04</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 6: EIP-7748
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">7748</span>
-                <span class="eip-title">Background State Conversion to Verkle</span>
-            </div>
-            <p class="eip-summary reveal">Defines a per-block background process that migrates MPT state into the Verkle tree, a fixed number of items at a time.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Converts a fixed CONVERSION_STRIDE of items before each block's transactions</li>
-                <li class="reveal">Processes storage slots first, then account data and code</li>
-                <li class="reveal">Organic conversion via transactions alone is too slow — dedicated migration is essential</li>
-            </ul>
-        </div>
-        <div class="slide-num">05</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 7: EIP-2926
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--tr"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">2926</span>
-                <span class="eip-title">Chunk-Based Code Merkleization</span>
-            </div>
-            <p class="eip-summary reveal">Splits contract bytecode into 31-byte chunks in a Merkle tree, so stateless clients only fetch the chunks actually accessed.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Bytecode is the 2nd largest contributor to witness size — this directly cuts it</li>
-                <li class="reveal">Adds codeSize and codeRoot account fields; increases code storage gas from 200 to 500/byte</li>
-                <li class="reveal">Requires a 7612-style transition; a smaller change than full tree restructuring</li>
-            </ul>
-        </div>
-        <div class="slide-num">06</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 8: EIP-7545
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--small" style="bottom: clamp(3rem, 8vh, 6rem); left: clamp(2rem, 5vw, 5rem);"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">Tree Transition</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">7545</span>
-                <span class="eip-title">Verkle Proof Verification Precompile</span>
-            </div>
-            <p class="eip-summary reveal">Adds a precompile (address 0x21) that lets smart contracts verify stateless Ethereum proofs on-chain.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Supports multiple proof formats via version byte (0 = MPT, 1 = polynomial commitments)</li>
-                <li class="reveal">Bridges and L2s can verify proofs without contract upgrades when format evolves</li>
-                <li class="reveal">Gas cost scales dynamically with number of commitments and leaf depths</li>
-            </ul>
-        </div>
-        <div class="slide-num">07</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 9: SECTION — State Expiry & Gas
+         SLIDE 5: SECTION — Tree Transition
          =========================================== -->
     <section class="slide section-slide">
         <div class="corner corner--tl"></div>
@@ -648,8 +546,77 @@ layout: null
         <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
         <div class="slide-content">
             <div class="section-bar reveal-bar"></div>
-            <h2 class="reveal">State Expiry<br>&amp; Gas Pricing</h2>
-            <p class="section-desc reveal">Managing state growth and aligning gas costs with the real cost of proof generation.</p>
+            <h2 class="reveal">Tree<br>Transition</h2>
+            <p class="section-desc reveal">Moving Ethereum's state from the Merkle Patricia Tree to a new structure — and how to get there.</p>
+        </div>
+        <div class="slide-num">03</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 5: EIP-7748
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7748</span>
+                <span class="eip-title">Background State Conversion to Binary Tree</span>
+            </div>
+            <p class="eip-summary reveal">Defines a per-block background process that migrates MPT state into the new binary tree, a fixed number of items at a time.</p>
+        </div>
+        <div class="slide-num">04</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 6: EIP-7612
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="bottom: clamp(4rem, 10vh, 8rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7612</span>
+                <span class="eip-title">State Transition via Overlay Tree</span>
+            </div>
+            <p class="eip-summary reveal">Defines the dual-tree "frozen base" approach: the existing MPT freezes and a new overlay tree handles all writes.</p>
+        </div>
+        <div class="slide-num">05</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 7: EIP-7545
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7545</span>
+                <span class="eip-title">Proof Verification Precompile</span>
+            </div>
+            <p class="eip-summary reveal">Adds a precompile (address 0x21) that lets smart contracts verify stateless Ethereum proofs on-chain.</p>
+        </div>
+        <div class="slide-num">06</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 8: SECTION — State Expiry
+         =========================================== -->
+    <section class="slide section-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
+        <div class="slide-content">
+            <div class="section-bar reveal-bar"></div>
+            <h2 class="reveal">State<br>Expiry</h2>
+            <p class="section-desc reveal">Managing state growth — expiring cold data, temporary storage, and write pricing.</p>
         </div>
         <div class="slide-num">08</div>
     </section>
@@ -667,12 +634,7 @@ layout: null
                 <span class="eip-number">7736</span>
                 <span class="eip-title">Leaf-Level State Expiry</span>
             </div>
-            <p class="eip-summary reveal">Expires only leaf-level data in Verkle trees after ~6 months of inactivity, preserving structural integrity. <em>Intended as a prompt to discuss state expiry.</em></p>
-            <ul class="eip-bullets">
-                <li class="reveal">A pragmatic alternative to earlier proposals that required address space extensions</li>
-                <li class="reveal">Expired state can be resurrected via a new tx type with a proof of previous state</li>
-                <li class="reveal">Reduces state bloat with minimal architectural disruption</li>
-            </ul>
+            <p class="eip-summary reveal">Expires only leaf-level data in the state tree after ~6 months of inactivity, preserving structural integrity.</p>
         </div>
         <div class="slide-num">09</div>
     </section>
@@ -691,11 +653,6 @@ layout: null
                 <span class="eip-title">Temporary Contract Storage</span>
             </div>
             <p class="eip-summary reveal">New opcodes TMPLOAD/TMPSTORE for data that persists across transactions but auto-clears on a protocol-defined schedule.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Targets ephemeral data patterns — reduces long-term state bloat without explicit deletion</li>
-                <li class="reveal">Two-period rollover scheme: data readable for at least one full period</li>
-                <li class="reveal">Old period's storage cleared in constant time at period boundaries</li>
-            </ul>
         </div>
         <div class="slide-num">10</div>
     </section>
@@ -708,46 +665,18 @@ layout: null
         <div class="corner corner--br"></div>
         <div class="accent-block accent-block--tr"></div>
         <div class="slide-content">
-            <div class="eip-category reveal">Gas Pricing</div>
+            <div class="eip-category reveal">State Expiry</div>
             <div class="eip-header reveal">
                 <span class="eip-number">8188</span>
                 <span class="eip-title">Tiered State Write Pricing</span>
             </div>
             <p class="eip-summary reveal">Introduces a tiered gas pricing model for state writes, where cost scales based on the type and impact of the write operation.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Differentiates gas cost between new state creation, state modification, and state expansion</li>
-                <li class="reveal">Aims to more accurately reflect the true cost of state changes to the network</li>
-                <li class="reveal">EIP in early draft — details subject to change</li>
-            </ul>
         </div>
         <div class="slide-num">11</div>
     </section>
 
     <!-- ===========================================
-         SLIDE 13: EIP-4762
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--small" style="bottom: clamp(4rem, 10vh, 8rem); right: clamp(2rem, 5vw, 5rem);"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">Gas Pricing</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">4762</span>
-                <span class="eip-title">Statelessness Gas Cost Changes</span>
-            </div>
-            <p class="eip-summary reveal">Adjusts the gas schedule to align costs with the actual expense of generating Verkle tree proofs.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Tracks fine-grained "access events" and "write events" — charges per tree branch traversed</li>
-                <li class="reveal">Code deployment drops from 200 gas/byte to a flat rate; adjacent storage: 2,100 → 200 gas</li>
-                <li class="reveal">~200 gas per code chunk accessed during execution</li>
-            </ul>
-        </div>
-        <div class="slide-num">12</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 14: SECTION — ZK & Proofs
+         SLIDE 13: SECTION — ZK
          =========================================== -->
     <section class="slide section-slide">
         <div class="corner corner--tl"></div>
@@ -756,94 +685,60 @@ layout: null
         <div class="slide-content">
             <div class="section-bar reveal-bar"></div>
             <h2 class="reveal">ZK &amp;<br>Execution Proofs</h2>
-            <p class="section-desc reveal">Zero-knowledge proofs, execution verification, and block-level optimizations.</p>
+            <p class="section-desc reveal">Zero-knowledge proofs and execution verification.</p>
         </div>
-        <div class="slide-num">13</div>
+        <div class="slide-num">12</div>
     </section>
 
     <!-- ===========================================
-         SLIDE 15: EIP-8025
+         SLIDE 14: EIP-8025
          =========================================== -->
     <section class="slide">
         <div class="corner corner--tl"></div>
         <div class="corner corner--br"></div>
         <div class="accent-block accent-block--tr"></div>
         <div class="slide-content">
-            <div class="eip-category reveal">ZK &amp; Proofs</div>
+            <div class="eip-category reveal">ZK</div>
             <div class="eip-header reveal">
                 <span class="eip-number">8025</span>
                 <span class="eip-title">Optional Execution Proofs</span>
             </div>
             <p class="eip-summary reveal">Lets beacon nodes validate execution payloads without running a full execution client — via cryptographic proofs shared across the consensus network.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Two validator modes: proof-generating nodes and stateless validators</li>
-                <li class="reveal">Lowers hardware requirements; decouples validation cost from gas limit</li>
-                <li class="reveal">Backward-compatible (no hard fork needed) — can be tested safely before deep integration</li>
-            </ul>
+        </div>
+        <div class="slide-num">13</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 15: SECTION — Conclusion
+         =========================================== -->
+    <section class="slide section-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
+        <div class="slide-content">
+            <div class="section-bar reveal-bar"></div>
+            <h2 class="reveal">Conclusion</h2>
+            <p class="section-desc reveal">Wrapping up the panel.</p>
         </div>
         <div class="slide-num">14</div>
     </section>
 
     <!-- ===========================================
-         SLIDE 16: EIP-7928
+         SLIDE 16: EIP-6800
          =========================================== -->
     <section class="slide">
         <div class="corner corner--tl"></div>
         <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="accent-block accent-block--tr"></div>
         <div class="slide-content">
-            <div class="eip-category reveal">ZK &amp; Proofs</div>
+            <div class="eip-category reveal">Conclusion</div>
             <div class="eip-header reveal">
-                <span class="eip-number">7928</span>
-                <span class="eip-title">Block-Level Access Lists</span>
+                <span class="eip-number">6800</span>
+                <span class="eip-title">Ethereum State Using a Unified Verkle Tree</span>
             </div>
-            <p class="eip-summary reveal">Mandatory access lists appended to execution payloads, recording every account and storage location accessed during block execution.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Enables parallel disk I/O, parallel tx execution, and state reconstruction without re-execution</li>
-                <li class="reveal">Size constrained to block_gas_limit / 2000 items</li>
-                <li class="reveal">Clients verify BALs asynchronously alongside parallel operations</li>
-            </ul>
+            <p class="eip-summary reveal">Introduces a Verkle tree alongside the existing Merkle Patricia Tree as the first step toward fully stateless Ethereum.</p>
         </div>
         <div class="slide-num">15</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 17: EIP-7911
-         =========================================== -->
-    <section class="slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--tr"></div>
-        <div class="slide-content">
-            <div class="eip-category reveal">ZK &amp; Proofs</div>
-            <div class="eip-header reveal">
-                <span class="eip-number">7911</span>
-                <span class="eip-title">Perceptron Tree ZKP Scaling</span>
-            </div>
-            <p class="eip-summary reveal">Uses Perceptron Tree-based zero-knowledge proofs to compress multiple transactions into a unified proof by analyzing inter-transaction relationships.</p>
-            <ul class="eip-bullets">
-                <li class="reveal">Recursive partitioning groups similar transactions via linear perceptron classifiers</li>
-                <li class="reveal">Combines tree commitments, classification paths, and similarity proofs into a single ZKP</li>
-                <li class="reveal">Application-layer only — no protocol changes required</li>
-            </ul>
-        </div>
-        <div class="slide-num">16</div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 18: CLOSING
-         =========================================== -->
-    <section class="slide title-slide">
-        <div class="corner corner--tl"></div>
-        <div class="corner corner--br"></div>
-        <div class="accent-block accent-block--tr"></div>
-        <div class="bar reveal-bar" style="position:absolute; top: clamp(5rem, 15vh, 12rem); left:0; width: clamp(200px, 40vw, 500px);"></div>
-        <div class="slide-content">
-            <div class="label reveal">Panel Discussion</div>
-            <h1 class="reveal">Questions<br>&amp; Discussion</h1>
-            <p class="subtitle reveal">Let's hear from the client teams.</p>
-        </div>
-        <div class="slide-num">17</div>
     </section>
 
     <!-- ===========================================
