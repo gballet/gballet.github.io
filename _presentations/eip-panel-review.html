@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIP Panel Review — Stateless Ethereum</title>
+
+    <!-- Fonts: Archivo for display, Nunito for body -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (SWISS MODERN THEME)
+           =========================================== */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-slide-alt: #f8f8f6;
+            --text-primary: #0a0a0a;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --accent: #ff3300;
+            --accent-dark: #cc2900;
+            --border: #e0e0e0;
+            --border-light: #eeeeee;
+
+            --font-display: 'Archivo', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+
+            --title-size: clamp(2rem, 6vw, 5rem);
+            --h2-size: clamp(1.4rem, 3.5vw, 2.5rem);
+            --h3-size: clamp(1rem, 2vw, 1.4rem);
+            --subtitle-size: clamp(0.85rem, 1.8vw, 1.2rem);
+            --body-size: clamp(0.75rem, 1.4vw, 1.05rem);
+            --small-size: clamp(0.6rem, 1vw, 0.8rem);
+            --label-size: clamp(0.55rem, 0.9vw, 0.75rem);
+
+            --slide-padding: clamp(1.5rem, 5vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.25rem, 1vw, 1rem);
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        /* ===========================================
+           BASE STYLES
+           =========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* === VIEWPORT-BASE.CSS (MANDATORY) === */
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            padding: var(--slide-padding);
+        }
+        .card, .container, .content-box {
+            max-width: min(90vw, 1000px);
+            max-height: min(80vh, 700px);
+        }
+        .feature-list, .bullet-list {
+            gap: clamp(0.4rem, 1vh, 1rem);
+        }
+        .feature-list li, .bullet-list li {
+            font-size: var(--body-size);
+            line-height: 1.4;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+        img, .image-container {
+            max-width: 100%;
+            max-height: min(50vh, 400px);
+            object-fit: contain;
+        }
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 3vw, 2rem);
+                --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+                --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+                --h2-size: clamp(1rem, 3vw, 1.75rem);
+            }
+        }
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+                --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+                --title-size: clamp(1.1rem, 4vw, 2rem);
+                --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+            }
+            .nav-dots, .keyboard-hint, .decorative {
+                display: none;
+            }
+        }
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.4rem, 2vw, 1rem);
+                --title-size: clamp(1rem, 3.5vw, 1.5rem);
+                --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+                --body-size: clamp(0.65rem, 1vw, 0.85rem);
+            }
+        }
+        @media (max-width: 600px) {
+            :root {
+                --title-size: clamp(1.25rem, 7vw, 2.5rem);
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html {
+                scroll-behavior: auto;
+            }
+        }
+        /* === END VIEWPORT-BASE.CSS === */
+
+        /* ===========================================
+           GLOBAL STYLES
+           =========================================== */
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===========================================
+           SLIDE SHARED STYLES
+           =========================================== */
+        .slide {
+            background: var(--bg-primary);
+        }
+        .slide:nth-child(even) {
+            background: var(--bg-slide-alt);
+        }
+
+        /* Grid overlay for Swiss Modern feel */
+        .slide::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent calc(100% / 12 - 1px),
+                    var(--border-light) calc(100% / 12 - 1px),
+                    var(--border-light) calc(100% / 12)
+                );
+            opacity: 0.25;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .slide > * { position: relative; z-index: 1; }
+
+        /* Corner marks */
+        .corner {
+            position: absolute;
+            width: clamp(12px, 2vw, 20px);
+            height: clamp(12px, 2vw, 20px);
+        }
+        .corner--tl {
+            top: clamp(0.75rem, 2vh, 1.5rem);
+            left: clamp(0.75rem, 2vw, 1.5rem);
+            border-top: 2px solid var(--text-primary);
+            border-left: 2px solid var(--text-primary);
+        }
+        .corner--br {
+            bottom: clamp(0.75rem, 2vh, 1.5rem);
+            right: clamp(0.75rem, 2vw, 1.5rem);
+            border-bottom: 2px solid var(--text-primary);
+            border-right: 2px solid var(--text-primary);
+        }
+
+        /* ===========================================
+           EIP SLIDE LAYOUT
+           =========================================== */
+        .eip-header {
+            display: flex;
+            align-items: baseline;
+            gap: clamp(0.5rem, 1.5vw, 1.5rem);
+            margin-bottom: clamp(0.5rem, 1.5vh, 1.5rem);
+        }
+        .eip-number {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: var(--h2-size);
+            color: var(--accent);
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .eip-title {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: var(--h2-size);
+            color: var(--text-primary);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .eip-category {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: var(--label-size);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: clamp(0.4rem, 1vh, 0.8rem);
+        }
+        .eip-summary {
+            font-size: var(--body-size);
+            color: var(--text-secondary);
+            line-height: 1.65;
+            max-width: min(85vw, 750px);
+            margin-bottom: clamp(0.5rem, 1.5vh, 1.5rem);
+        }
+        .eip-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.3rem, 0.8vh, 0.7rem);
+            max-width: min(85vw, 750px);
+        }
+        .eip-bullets li {
+            font-size: var(--body-size);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding-left: clamp(1rem, 2vw, 1.5rem);
+            position: relative;
+        }
+        .eip-bullets li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: clamp(0.4rem, 0.7vh, 0.55rem);
+            width: clamp(5px, 0.6vw, 8px);
+            height: clamp(5px, 0.6vw, 8px);
+            background: var(--accent);
+        }
+
+        /* Red accent block per slide */
+        .accent-block {
+            position: absolute;
+            width: clamp(40px, 8vw, 100px);
+            height: clamp(40px, 8vw, 100px);
+        }
+        .accent-block--tr {
+            top: clamp(1.5rem, 4vh, 3rem);
+            right: clamp(1.5rem, 4vw, 4rem);
+            background: var(--accent);
+        }
+        .accent-block--small {
+            width: clamp(20px, 3vw, 40px);
+            height: clamp(20px, 3vw, 40px);
+            background: var(--accent);
+            opacity: 0.15;
+        }
+
+        /* Bar decoration */
+        .bar {
+            position: absolute;
+            height: clamp(2px, 0.4vh, 4px);
+            background: var(--text-primary);
+        }
+
+        /* Slide number */
+        .slide-num {
+            position: absolute;
+            bottom: clamp(0.75rem, 2vh, 1.5rem);
+            left: clamp(0.75rem, 2vw, 1.5rem);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        /* ===========================================
+           TITLE SLIDE
+           =========================================== */
+        .title-slide .slide-content {
+            justify-content: center;
+        }
+        .title-slide h1 {
+            font-family: var(--font-display);
+            font-size: var(--title-size);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+        }
+        .title-slide .subtitle {
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            margin-top: clamp(0.5rem, 1.5vh, 1.5rem);
+            line-height: 1.5;
+        }
+        .title-slide .label {
+            font-family: var(--font-display);
+            font-size: var(--label-size);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: clamp(0.4rem, 1vh, 1rem);
+        }
+
+        /* ===========================================
+           SECTION DIVIDER
+           =========================================== */
+        .section-slide .slide-content {
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .section-slide h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 5vw, 4rem);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+        }
+        .section-slide .section-desc {
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            margin-top: clamp(0.5rem, 1vh, 1rem);
+            max-width: min(80vw, 600px);
+            line-height: 1.5;
+        }
+        .section-bar {
+            width: clamp(40px, 8vw, 80px);
+            height: clamp(3px, 0.5vh, 5px);
+            background: var(--accent);
+            margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
+        }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+
+        /* ===========================================
+           NAVIGATION DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.5rem, 1.5vw, 1.25rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(4px, 0.6vh, 8px);
+            z-index: 1000;
+        }
+        .nav-dot {
+            width: clamp(6px, 0.6vw, 10px);
+            height: clamp(6px, 0.6vw, 10px);
+            border: 1.5px solid var(--text-muted);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+        .nav-dot.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .reveal:nth-child(5) { transition-delay: 0.45s; }
+        .reveal:nth-child(6) { transition-delay: 0.55s; }
+
+        .reveal-bar {
+            transform-origin: left;
+            transform: scaleX(0);
+            transition: transform 0.8s var(--ease-out-expo);
+        }
+        .slide.visible .reveal-bar {
+            transform: scaleX(1);
+        }
+
+        .accent-block {
+            opacity: 0;
+            transition: opacity 0.6s ease, transform 0.8s var(--ease-out-expo);
+            transform: translateY(-15px) rotate(-3deg);
+        }
+        .slide.visible .accent-block {
+            opacity: 1;
+            transform: translateY(0) rotate(0deg);
+        }
+
+        /* ===========================================
+           KEYBOARD HINT
+           =========================================== */
+        .keyboard-hint {
+            position: fixed;
+            bottom: clamp(0.75rem, 2vh, 1.5rem);
+            right: clamp(3rem, 6vw, 5rem);
+            font-family: var(--font-display);
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            z-index: 999;
+            opacity: 0.5;
+            transition: opacity 2s ease 5s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Navigation dots -->
+    <nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+    <!-- Keyboard hint -->
+    <div class="keyboard-hint decorative">Arrow keys / Space to navigate</div>
+
+    <!-- ===========================================
+         SLIDE 1: TITLE
+         =========================================== -->
+    <section class="slide title-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="bar reveal-bar" style="position:absolute; bottom: clamp(5rem, 15vh, 12rem); left:0; width: clamp(200px, 40vw, 500px);"></div>
+        <div class="slide-content">
+            <div class="label reveal">Ethereum Panel</div>
+            <h1 class="reveal">EIP Review:<br>Stateless<br>Ethereum</h1>
+            <p class="subtitle reveal">A structured look at the proposals shaping Ethereum's state architecture.</p>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 2: SECTION — Tree Transition
+         =========================================== -->
+    <section class="slide section-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
+        <div class="slide-content">
+            <div class="section-bar reveal-bar"></div>
+            <h2 class="reveal">Tree<br>Transition</h2>
+            <p class="section-desc reveal">Moving Ethereum's state from the Merkle Patricia Tree to a new structure — and how to get there.</p>
+        </div>
+        <div class="slide-num">01</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 3: EIP-6800
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">6800</span>
+                <span class="eip-title">Ethereum State Using a Unified Verkle Tree</span>
+            </div>
+            <p class="eip-summary reveal">Introduces a Verkle tree alongside the existing Merkle Patricia Tree as the first step toward fully stateless Ethereum.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Reduces witness sizes from ~3 kB/account (18 MB worst-case/block) to ~200 bytes/account</li>
+                <li class="reveal">Uses Bandersnatch-curve Pedersen commitments in a unified key-value structure</li>
+                <li class="reveal">Dual-tree approach: frozen Patricia tree + live Verkle tree during transition</li>
+            </ul>
+        </div>
+        <div class="slide-num">02</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 4: EIP-7864
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="bottom: clamp(4rem, 10vh, 8rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7864</span>
+                <span class="eip-title">Unified Binary Tree for Ethereum State</span>
+            </div>
+            <p class="eip-summary reveal">Replaces Ethereum's hexary Patricia tries with a single unified binary tree — accounts, storage, and code in one structure.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Designed for ZK-friendliness: enables validity proofs (SNARKs/STARKs) over blocks</li>
+                <li class="reveal">32-byte keys with 31-byte stem + 1-byte sub-index co-locate related data in the same branch</li>
+                <li class="reveal">Uses BLAKE3 for hashing (final choice pending); directly addresses MPT + RLP + Keccak proof costs</li>
+            </ul>
+        </div>
+        <div class="slide-num">03</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 5: EIP-7612
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7612</span>
+                <span class="eip-title">Verkle State Transition via Overlay Tree</span>
+            </div>
+            <p class="eip-summary reveal">Defines the dual-tree "frozen base" approach: the existing MPT freezes and a new Verkle overlay handles all writes.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Reads check the overlay first, fall back to the frozen MPT — no immediate full migration needed</li>
+                <li class="reveal">Lets the Verkle fork ship without requiring a lengthy upfront state conversion</li>
+                <li class="reveal">Avoids consensus-layer disruptions from converting the entire historical state at once</li>
+            </ul>
+        </div>
+        <div class="slide-num">04</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 6: EIP-7748
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7748</span>
+                <span class="eip-title">Background State Conversion to Verkle</span>
+            </div>
+            <p class="eip-summary reveal">Defines a per-block background process that migrates MPT state into the Verkle tree, a fixed number of items at a time.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Converts a fixed CONVERSION_STRIDE of items before each block's transactions</li>
+                <li class="reveal">Processes storage slots first, then account data and code</li>
+                <li class="reveal">Organic conversion via transactions alone is too slow — dedicated migration is essential</li>
+            </ul>
+        </div>
+        <div class="slide-num">05</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 7: EIP-2926
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">2926</span>
+                <span class="eip-title">Chunk-Based Code Merkleization</span>
+            </div>
+            <p class="eip-summary reveal">Splits contract bytecode into 31-byte chunks in a Merkle tree, so stateless clients only fetch the chunks actually accessed.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Bytecode is the 2nd largest contributor to witness size — this directly cuts it</li>
+                <li class="reveal">Adds codeSize and codeRoot account fields; increases code storage gas from 200 to 500/byte</li>
+                <li class="reveal">Requires a 7612-style transition; a smaller change than full tree restructuring</li>
+            </ul>
+        </div>
+        <div class="slide-num">06</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 8: EIP-7545
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="bottom: clamp(3rem, 8vh, 6rem); left: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Tree Transition</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7545</span>
+                <span class="eip-title">Verkle Proof Verification Precompile</span>
+            </div>
+            <p class="eip-summary reveal">Adds a precompile (address 0x21) that lets smart contracts verify stateless Ethereum proofs on-chain.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Supports multiple proof formats via version byte (0 = MPT, 1 = polynomial commitments)</li>
+                <li class="reveal">Bridges and L2s can verify proofs without contract upgrades when format evolves</li>
+                <li class="reveal">Gas cost scales dynamically with number of commitments and leaf depths</li>
+            </ul>
+        </div>
+        <div class="slide-num">07</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 9: SECTION — State Expiry & Gas
+         =========================================== -->
+    <section class="slide section-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
+        <div class="slide-content">
+            <div class="section-bar reveal-bar"></div>
+            <h2 class="reveal">State Expiry<br>&amp; Gas Pricing</h2>
+            <p class="section-desc reveal">Managing state growth and aligning gas costs with the real cost of proof generation.</p>
+        </div>
+        <div class="slide-num">08</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 10: EIP-7736
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">State Expiry</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7736</span>
+                <span class="eip-title">Leaf-Level State Expiry</span>
+            </div>
+            <p class="eip-summary reveal">Expires only leaf-level data in Verkle trees after ~6 months of inactivity, preserving structural integrity. <em>Intended as a prompt to discuss state expiry.</em></p>
+            <ul class="eip-bullets">
+                <li class="reveal">A pragmatic alternative to earlier proposals that required address space extensions</li>
+                <li class="reveal">Expired state can be resurrected via a new tx type with a proof of previous state</li>
+                <li class="reveal">Reduces state bloat with minimal architectural disruption</li>
+            </ul>
+        </div>
+        <div class="slide-num">09</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 11: EIP-8125
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">State Expiry</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">8125</span>
+                <span class="eip-title">Temporary Contract Storage</span>
+            </div>
+            <p class="eip-summary reveal">New opcodes TMPLOAD/TMPSTORE for data that persists across transactions but auto-clears on a protocol-defined schedule.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Targets ephemeral data patterns — reduces long-term state bloat without explicit deletion</li>
+                <li class="reveal">Two-period rollover scheme: data readable for at least one full period</li>
+                <li class="reveal">Old period's storage cleared in constant time at period boundaries</li>
+            </ul>
+        </div>
+        <div class="slide-num">10</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 12: EIP-8188
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Gas Pricing</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">8188</span>
+                <span class="eip-title">Tiered State Write Pricing</span>
+            </div>
+            <p class="eip-summary reveal">Introduces a tiered gas pricing model for state writes, where cost scales based on the type and impact of the write operation.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Differentiates gas cost between new state creation, state modification, and state expansion</li>
+                <li class="reveal">Aims to more accurately reflect the true cost of state changes to the network</li>
+                <li class="reveal">EIP in early draft — details subject to change</li>
+            </ul>
+        </div>
+        <div class="slide-num">11</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 13: EIP-4762
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="bottom: clamp(4rem, 10vh, 8rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">Gas Pricing</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">4762</span>
+                <span class="eip-title">Statelessness Gas Cost Changes</span>
+            </div>
+            <p class="eip-summary reveal">Adjusts the gas schedule to align costs with the actual expense of generating Verkle tree proofs.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Tracks fine-grained "access events" and "write events" — charges per tree branch traversed</li>
+                <li class="reveal">Code deployment drops from 200 gas/byte to a flat rate; adjacent storage: 2,100 → 200 gas</li>
+                <li class="reveal">~200 gas per code chunk accessed during execution</li>
+            </ul>
+        </div>
+        <div class="slide-num">12</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 14: SECTION — ZK & Proofs
+         =========================================== -->
+    <section class="slide section-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(2rem, 6vh, 5rem); right: clamp(3rem, 8vw, 8rem);"></div>
+        <div class="slide-content">
+            <div class="section-bar reveal-bar"></div>
+            <h2 class="reveal">ZK &amp;<br>Execution Proofs</h2>
+            <p class="section-desc reveal">Zero-knowledge proofs, execution verification, and block-level optimizations.</p>
+        </div>
+        <div class="slide-num">13</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 15: EIP-8025
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">ZK &amp; Proofs</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">8025</span>
+                <span class="eip-title">Optional Execution Proofs</span>
+            </div>
+            <p class="eip-summary reveal">Lets beacon nodes validate execution payloads without running a full execution client — via cryptographic proofs shared across the consensus network.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Two validator modes: proof-generating nodes and stateless validators</li>
+                <li class="reveal">Lowers hardware requirements; decouples validation cost from gas limit</li>
+                <li class="reveal">Backward-compatible (no hard fork needed) — can be tested safely before deep integration</li>
+            </ul>
+        </div>
+        <div class="slide-num">14</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 16: EIP-7928
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--small" style="top: clamp(3rem, 8vh, 6rem); right: clamp(2rem, 5vw, 5rem);"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">ZK &amp; Proofs</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7928</span>
+                <span class="eip-title">Block-Level Access Lists</span>
+            </div>
+            <p class="eip-summary reveal">Mandatory access lists appended to execution payloads, recording every account and storage location accessed during block execution.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Enables parallel disk I/O, parallel tx execution, and state reconstruction without re-execution</li>
+                <li class="reveal">Size constrained to block_gas_limit / 2000 items</li>
+                <li class="reveal">Clients verify BALs asynchronously alongside parallel operations</li>
+            </ul>
+        </div>
+        <div class="slide-num">15</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 17: EIP-7911
+         =========================================== -->
+    <section class="slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="slide-content">
+            <div class="eip-category reveal">ZK &amp; Proofs</div>
+            <div class="eip-header reveal">
+                <span class="eip-number">7911</span>
+                <span class="eip-title">Perceptron Tree ZKP Scaling</span>
+            </div>
+            <p class="eip-summary reveal">Uses Perceptron Tree-based zero-knowledge proofs to compress multiple transactions into a unified proof by analyzing inter-transaction relationships.</p>
+            <ul class="eip-bullets">
+                <li class="reveal">Recursive partitioning groups similar transactions via linear perceptron classifiers</li>
+                <li class="reveal">Combines tree commitments, classification paths, and similarity proofs into a single ZKP</li>
+                <li class="reveal">Application-layer only — no protocol changes required</li>
+            </ul>
+        </div>
+        <div class="slide-num">16</div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 18: CLOSING
+         =========================================== -->
+    <section class="slide title-slide">
+        <div class="corner corner--tl"></div>
+        <div class="corner corner--br"></div>
+        <div class="accent-block accent-block--tr"></div>
+        <div class="bar reveal-bar" style="position:absolute; top: clamp(5rem, 15vh, 12rem); left:0; width: clamp(200px, 40vw, 500px);"></div>
+        <div class="slide-content">
+            <div class="label reveal">Panel Discussion</div>
+            <h1 class="reveal">Questions<br>&amp; Discussion</h1>
+            <p class="subtitle reveal">Let's hear from the client teams.</p>
+        </div>
+        <div class="slide-num">17</div>
+    </section>
+
+    <!-- ===========================================
+       SLIDE PRESENTATION CONTROLLER
+       =========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.isScrolling = false;
+
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.setupWheelNav();
+                this.setupProgressBar();
+                this.setupNavDots();
+            }
+
+            /* === Intersection Observer: add .visible class === */
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const index = Array.from(this.slides).indexOf(entry.target);
+                            this.currentSlide = index;
+                            this.updateProgressBar();
+                            this.updateNavDots();
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+
+            /* === Keyboard: Arrows, Space, PageUp/Down === */
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    switch (e.key) {
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                        case ' ':
+                        case 'PageDown':
+                            e.preventDefault();
+                            this.goToSlide(this.currentSlide + 1);
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                        case 'PageUp':
+                            e.preventDefault();
+                            this.goToSlide(this.currentSlide - 1);
+                            break;
+                        case 'Home':
+                            e.preventDefault();
+                            this.goToSlide(0);
+                            break;
+                        case 'End':
+                            e.preventDefault();
+                            this.goToSlide(this.slides.length - 1);
+                            break;
+                    }
+                });
+            }
+
+            /* === Touch / Swipe support === */
+            setupTouchNav() {
+                let touchStartY = 0;
+                document.addEventListener('touchstart', (e) => {
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    const diff = touchStartY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) {
+                        this.goToSlide(this.currentSlide + (diff > 0 ? 1 : -1));
+                    }
+                }, { passive: true });
+            }
+
+            /* === Mouse wheel with debounce === */
+            setupWheelNav() {
+                document.addEventListener('wheel', (e) => {
+                    if (this.isScrolling) return;
+                    this.isScrolling = true;
+                    if (e.deltaY > 30) {
+                        this.goToSlide(this.currentSlide + 1);
+                    } else if (e.deltaY < -30) {
+                        this.goToSlide(this.currentSlide - 1);
+                    }
+                    setTimeout(() => { this.isScrolling = false; }, 800);
+                }, { passive: true });
+            }
+
+            /* === Progress bar === */
+            setupProgressBar() {
+                this.progressBar = document.getElementById('progressBar');
+                this.updateProgressBar();
+            }
+
+            updateProgressBar() {
+                if (!this.progressBar) return;
+                const progress = ((this.currentSlide + 1) / this.slides.length) * 100;
+                this.progressBar.style.width = progress + '%';
+            }
+
+            /* === Navigation dots === */
+            setupNavDots() {
+                const container = document.getElementById('navDots');
+                if (!container) return;
+
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                    dot.addEventListener('click', () => this.goToSlide(i));
+                    container.appendChild(dot);
+                });
+            }
+
+            updateNavDots() {
+                const dots = document.querySelectorAll('.nav-dot');
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === this.currentSlide);
+                });
+            }
+
+            /* === Navigate to slide === */
+            goToSlide(index) {
+                if (index < 0 || index >= this.slides.length) return;
+                this.currentSlide = index;
+                this.slides[index].scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        /* Initialize on DOM ready */
+        document.addEventListener('DOMContentLoaded', () => {
+            new SlidePresentation();
+        });
+    </script>
+</body>
+</html>
