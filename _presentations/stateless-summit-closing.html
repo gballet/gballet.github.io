@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stateless Summit — Closing</title>
+
+    <!-- Fonts: Cormorant Garamond (editorial serif) + Source Serif 4 (body) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (PAPER & INK THEME)
+           =========================================== */
+        :root {
+            --bg-cream: #faf9f7;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555;
+            --text-muted: #999;
+            --accent-crimson: #c41e3a;
+            --accent-warm: #e8d4c0;
+            --rule-color: #1a1a1a;
+
+            --font-display: 'Cormorant Garamond', serif;
+            --font-body: 'Source Serif 4', serif;
+            --title-size: clamp(2rem, 5vw, 4rem);
+            --subtitle-size: clamp(0.8rem, 1.4vw, 1.1rem);
+            --body-size: clamp(0.75rem, 1.2vw, 1rem);
+            --small-size: clamp(0.6rem, 0.9vw, 0.8rem);
+            --slide-padding: clamp(1.5rem, 4vw, 5rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ===========================================
+           BASE STYLES + VIEWPORT FITTING
+           =========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg-cream);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: var(--slide-padding);
+        }
+
+        /* ===========================================
+           DECORATIVE ELEMENTS
+           =========================================== */
+        .h-rule {
+            position: absolute;
+            left: 10%; right: 10%;
+            height: 1px;
+            background: var(--rule-color);
+            transform-origin: left center;
+            animation: expandH 0.9s var(--ease-out-expo) forwards;
+            opacity: 0;
+        }
+        .h-rule--top { top: clamp(1.5rem, 4vh, 3.5rem); animation-delay: 0.1s; }
+        .h-rule--bottom { bottom: clamp(1.5rem, 4vh, 3.5rem); animation-delay: 0.2s; }
+
+        .corner-mark {
+            position: absolute;
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            color: var(--text-muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.3s;
+        }
+        .corner-mark--tl { top: clamp(2rem, 5vh, 4rem); left: clamp(1.5rem, 3vw, 3.5rem); }
+        .corner-mark--br { bottom: clamp(2rem, 5vh, 4rem); right: clamp(1.5rem, 3vw, 3.5rem); }
+
+        .geo-accent {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 1.2s ease forwards 0.2s;
+        }
+        .geo-circle {
+            width: clamp(50px, 8vw, 100px);
+            height: clamp(50px, 8vw, 100px);
+            border: 1.5px solid var(--accent-warm);
+            border-radius: 50%;
+            top: 12%; right: 8%;
+        }
+        .geo-dot {
+            width: clamp(5px, 0.8vw, 8px);
+            height: clamp(5px, 0.8vw, 8px);
+            background: var(--accent-crimson);
+            border-radius: 50%;
+            bottom: 20%; left: 7%;
+        }
+        .geo-line {
+            width: clamp(30px, 5vw, 60px);
+            height: 1.5px;
+            background: var(--accent-warm);
+            top: 25%; left: 5%;
+        }
+
+        /* ===========================================
+           CONTENT LAYOUT
+           =========================================== */
+        .content {
+            text-align: center;
+            max-width: min(90vw, 900px);
+            z-index: 1;
+        }
+
+        .eyebrow {
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            margin-bottom: clamp(0.4rem, 1vh, 1rem);
+            opacity: 0;
+            animation: slideUp 0.6s var(--ease-out-expo) forwards 0.3s;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: var(--title-size);
+            line-height: 1.05;
+            margin-bottom: clamp(0.3rem, 0.8vh, 0.8rem);
+            opacity: 0;
+            animation: slideUp 0.6s var(--ease-out-expo) forwards 0.4s;
+        }
+        h1 em {
+            font-style: italic;
+            color: var(--accent-crimson);
+        }
+
+        .tagline {
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: var(--subtitle-size);
+            color: var(--text-secondary);
+            max-width: 44ch;
+            margin: 0 auto clamp(1.5rem, 3.5vh, 3rem);
+            opacity: 0;
+            animation: slideUp 0.6s var(--ease-out-expo) forwards 0.5s;
+        }
+
+        /* ===========================================
+           QR CODES — SIDE BY SIDE
+           =========================================== */
+        .qr-row {
+            display: flex;
+            gap: clamp(2rem, 5vw, 5rem);
+            align-items: flex-start;
+            justify-content: center;
+            opacity: 0;
+            animation: slideUp 0.6s var(--ease-out-expo) forwards 0.6s;
+        }
+
+        .qr-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .qr-label {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: clamp(0.9rem, 1.6vw, 1.25rem);
+            margin-bottom: clamp(0.3rem, 0.8vh, 0.75rem);
+        }
+
+        .qr-container {
+            background: #ffffff;
+            padding: clamp(8px, 1.5vw, 16px);
+            border: 1.5px solid var(--text-primary);
+            display: inline-block;
+            margin-bottom: clamp(0.3rem, 0.8vh, 0.75rem);
+        }
+
+        .qr-container canvas {
+            display: block;
+            width: clamp(120px, 18vw, 200px);
+            height: clamp(120px, 18vw, 200px);
+        }
+
+        .qr-url {
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            letter-spacing: 0.08em;
+            color: var(--accent-crimson);
+        }
+
+        /* ===========================================
+           RESPONSIVE BREAKPOINTS
+           =========================================== */
+        @media (max-height: 700px) {
+            :root {
+                --title-size: clamp(1.5rem, 4vw, 2.5rem);
+                --slide-padding: clamp(1rem, 3vw, 2rem);
+                --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+            }
+        }
+        @media (max-height: 600px) {
+            :root {
+                --title-size: clamp(1.2rem, 3.5vw, 2rem);
+                --slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+            }
+            .corner-mark, .geo-accent { display: none; }
+        }
+        @media (max-height: 500px) {
+            :root {
+                --title-size: clamp(1rem, 3vw, 1.5rem);
+                --slide-padding: clamp(0.5rem, 2vw, 1rem);
+            }
+            .tagline { display: none; }
+        }
+        @media (max-width: 600px) {
+            .qr-row {
+                flex-direction: column;
+                gap: clamp(1rem, 3vh, 2rem);
+            }
+            .qr-container canvas {
+                width: clamp(100px, 30vw, 160px);
+                height: clamp(100px, 30vw, 160px);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        @keyframes expandH {
+            from { opacity: 0; transform: scaleX(0); }
+            to { opacity: 1; transform: scaleX(1); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===========================================
+           INLINE EDITING
+           =========================================== */
+        .edit-hotzone {
+            position: fixed; top: 0; left: 0;
+            width: 80px; height: 80px;
+            z-index: 10000; cursor: pointer;
+        }
+        .edit-toggle {
+            position: fixed;
+            top: clamp(10px, 2vh, 18px);
+            left: clamp(10px, 2vw, 18px);
+            font-size: clamp(0.8rem, 1.2vw, 1rem);
+            background: var(--bg-cream);
+            border: 1.5px solid var(--text-primary);
+            border-radius: 4px;
+            padding: clamp(3px, 0.4vw, 6px) clamp(6px, 0.8vw, 12px);
+            cursor: pointer;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10001;
+            font-family: var(--font-body);
+        }
+        .edit-toggle.show, .edit-toggle.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .edit-toggle.active {
+            background: var(--accent-crimson);
+            color: #fff; border-color: var(--accent-crimson);
+        }
+        [contenteditable="true"] {
+            outline: 1.5px dashed var(--accent-crimson);
+            outline-offset: 3px; cursor: text;
+        }
+        .edit-banner {
+            position: fixed;
+            bottom: clamp(10px, 2vh, 18px);
+            left: 50%; transform: translateX(-50%);
+            background: var(--text-primary);
+            color: var(--bg-cream);
+            font-family: var(--font-body);
+            font-size: var(--small-size);
+            padding: clamp(4px, 0.8vh, 8px) clamp(10px, 1.5vw, 20px);
+            border-radius: 4px;
+            z-index: 10001;
+            display: none;
+        }
+        .edit-banner.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- Inline editing controls -->
+    <div class="edit-hotzone" id="editHotzone"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">✏️ Edit</button>
+    <div class="edit-banner" id="editBanner">Edit mode — click text to edit · Ctrl+S to save</div>
+
+    <!-- ===========================================
+         SINGLE SLIDE: QR CODES
+         =========================================== -->
+    <section class="slide">
+        <div class="h-rule h-rule--top"></div>
+        <div class="h-rule h-rule--bottom"></div>
+        <span class="corner-mark corner-mark--tl">Stateless Summit</span>
+        <span class="corner-mark corner-mark--br">MMXXVI</span>
+
+        <div class="geo-accent geo-circle"></div>
+        <div class="geo-accent geo-dot"></div>
+        <div class="geo-accent geo-line"></div>
+
+        <div class="content">
+            <div class="eyebrow">Continue the journey</div>
+            <h1>Go <em>Deeper</em></h1>
+            <div class="tagline">Scan to explore the resources, research, and everything discussed today.</div>
+
+            <div class="qr-row">
+                <div class="qr-item">
+                    <div class="qr-label">Resource Hub</div>
+                    <div class="qr-container">
+                        <canvas id="qr-resources" width="200" height="200"></canvas>
+                    </div>
+                    <div class="qr-url">stateless.fyi/resources.html</div>
+                </div>
+
+                <div class="qr-item">
+                    <div class="qr-label">Event Summary (coming soon)</div>
+                    <div class="qr-container">
+                        <canvas id="qr-summit" width="200" height="200"></canvas>
+                    </div>
+                    <div class="qr-url">stateless.fyi/summit/intro.html</div>
+                </div>
+
+                <div class="qr-item">
+                    <div class="qr-label">Follow Us</div>
+                    <div class="qr-container">
+                        <canvas id="qr-twitter" width="200" height="200"></canvas>
+                    </div>
+                    <div class="qr-url">@StatelessEth</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /* ===========================================
+           MINIMAL QR CODE GENERATOR
+           Client-side QR encoder (ISO 18004, byte mode, EC level L)
+           =========================================== */
+        const QRCode = (() => {
+            function generate(text, canvas, size) {
+                size = size || 200;
+                const modules = encode(text);
+                const ctx = canvas.getContext('2d');
+                const moduleCount = modules.length;
+                const cellSize = size / moduleCount;
+                canvas.width = size; canvas.height = size;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.fillStyle = '#1a1a1a';
+                for (let r = 0; r < moduleCount; r++) {
+                    for (let c = 0; c < moduleCount; c++) {
+                        if (modules[r][c]) {
+                            ctx.fillRect(Math.round(c * cellSize), Math.round(r * cellSize),
+                                Math.ceil(cellSize), Math.ceil(cellSize));
+                        }
+                    }
+                }
+            }
+
+            function encode(text) {
+                const data = new TextEncoder().encode(text);
+                const version = getVersion(data.length);
+                const size = version * 4 + 17;
+                const modules = Array.from({length: size}, () => Array(size).fill(null));
+                const reserved = Array.from({length: size}, () => Array(size).fill(false));
+                addFinderPatterns(modules, reserved, size);
+                addAlignmentPatterns(modules, reserved, version, size);
+                addTimingPatterns(modules, reserved, size);
+                addDarkModule(modules, reserved, version);
+                reserveFormatBits(reserved, size);
+                if (version >= 7) reserveVersionBits(reserved, size);
+                const dataBits = encodeData(data, version);
+                const ecBits = addErrorCorrection(dataBits, version);
+                const allBits = dataBits.concat(ecBits);
+                placeData(modules, reserved, allBits, size);
+                const bestMask = applyBestMask(modules, reserved, size);
+                addFormatBits(modules, bestMask, size);
+                if (version >= 7) addVersionBits(modules, version, size);
+                return modules;
+            }
+
+            function getVersion(dataLen) {
+                const caps = [0,17,32,53,78,106,134,154,192,230,271,321,367,425,458,520,586,644,718,792,858];
+                for (let v = 1; v <= 20; v++) { if (dataLen <= caps[v]) return v; }
+                return 20;
+            }
+
+            function addFinderPatterns(modules, reserved, size) {
+                for (const [r,c] of [[0,0],[0,size-7],[size-7,0]]) {
+                    for (let dr = -1; dr <= 7; dr++) {
+                        for (let dc = -1; dc <= 7; dc++) {
+                            const row = r+dr, col = c+dc;
+                            if (row < 0 || row >= size || col < 0 || col >= size) continue;
+                            const inOuter = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6;
+                            const inInner = dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4;
+                            const onBorder = dr === 0 || dr === 6 || dc === 0 || dc === 6;
+                            modules[row][col] = inOuter && (onBorder || inInner);
+                            reserved[row][col] = true;
+                        }
+                    }
+                }
+            }
+
+            function addAlignmentPatterns(modules, reserved, version, size) {
+                if (version < 2) return;
+                const positions = getAlignmentPositions(version, size);
+                for (const r of positions) {
+                    for (const c of positions) {
+                        if (reserved[r][c]) continue;
+                        for (let dr = -2; dr <= 2; dr++) {
+                            for (let dc = -2; dc <= 2; dc++) {
+                                const row = r+dr, col = c+dc;
+                                modules[row][col] = Math.abs(dr) === 2 || Math.abs(dc) === 2 || (dr === 0 && dc === 0);
+                                reserved[row][col] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function getAlignmentPositions(version, size) {
+                if (version === 1) return [];
+                const intervals = [0,0,18,22,26,30,34,22,24,26,28,30,32,34,26,26,26,28,28,30,28];
+                const step = version < intervals.length ? intervals[version] : 28;
+                const positions = [6];
+                let pos = size - 7;
+                while (pos > 6) { if (positions.indexOf(pos) === -1) positions.unshift(pos); pos -= step; }
+                positions.sort((a,b) => a - b);
+                return positions;
+            }
+
+            function addTimingPatterns(modules, reserved, size) {
+                for (let i = 8; i < size - 8; i++) {
+                    if (!reserved[6][i]) { modules[6][i] = i % 2 === 0; reserved[6][i] = true; }
+                    if (!reserved[i][6]) { modules[i][6] = i % 2 === 0; reserved[i][6] = true; }
+                }
+            }
+
+            function addDarkModule(modules, reserved, version) {
+                const r = 4 * version + 9; modules[r][8] = true; reserved[r][8] = true;
+            }
+
+            function reserveFormatBits(reserved, size) {
+                for (let i = 0; i <= 8; i++) { if (i < size) reserved[8][i] = true; if (i < size) reserved[i][8] = true; }
+                for (let i = 0; i < 8; i++) { reserved[8][size-1-i] = true; reserved[size-1-i][8] = true; }
+            }
+
+            function reserveVersionBits(reserved, size) {
+                for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) {
+                    reserved[i][size-11+j] = true; reserved[size-11+j][i] = true;
+                }
+            }
+
+            function encodeData(data, version) {
+                const totalCW = getTotalCodewords(version);
+                const ecCW = getECCodewords(version);
+                const dataCW = totalCW - ecCW;
+                const bits = [];
+                bits.push(0,1,0,0);
+                const ccBits = version <= 9 ? 8 : 16;
+                for (let i = ccBits-1; i >= 0; i--) bits.push((data.length >> i) & 1);
+                for (const byte of data) for (let i = 7; i >= 0; i--) bits.push((byte >> i) & 1);
+                const maxBits = dataCW * 8;
+                const termLen = Math.min(4, maxBits - bits.length);
+                for (let i = 0; i < termLen; i++) bits.push(0);
+                while (bits.length % 8 !== 0) bits.push(0);
+                const pads = [0xEC, 0x11]; let padIdx = 0;
+                while (bits.length < maxBits) { for (let i = 7; i >= 0; i--) bits.push((pads[padIdx] >> i) & 1); padIdx ^= 1; }
+                return bits.slice(0, maxBits);
+            }
+
+            function addErrorCorrection(dataBits, version) {
+                const ecCW = getECCodewords(version);
+                const dataBytes = [];
+                for (let i = 0; i < dataBits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | (dataBits[i+j] || 0); dataBytes.push(b); }
+                const gf = buildGF();
+                const gen = getGenPoly(ecCW, gf);
+                const padded = dataBytes.slice().concat(Array(ecCW).fill(0));
+                for (let i = 0; i < dataBytes.length; i++) {
+                    if (padded[i] === 0) continue;
+                    const lv = gf.log[padded[i]];
+                    for (let j = 0; j < gen.length; j++) padded[i+j] ^= gf.exp[(lv + gf.log[gen[j]]) % 255];
+                }
+                const ecBytes = padded.slice(dataBytes.length);
+                const bits = [];
+                for (const b of ecBytes) for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+                return bits;
+            }
+
+            function buildGF() {
+                const exp = Array(512), log = Array(256); let v = 1;
+                for (let i = 0; i < 255; i++) { exp[i] = v; log[v] = i; v = (v << 1) ^ (v >= 128 ? 0x11D : 0); }
+                for (let i = 255; i < 512; i++) exp[i] = exp[i-255];
+                return { exp, log };
+            }
+
+            function getGenPoly(degree, gf) {
+                let poly = [1];
+                for (let i = 0; i < degree; i++) {
+                    const factor = [1, gf.exp[i]];
+                    const result = Array(poly.length + 1).fill(0);
+                    for (let j = 0; j < poly.length; j++) for (let k = 0; k < factor.length; k++) result[j+k] ^= gf.exp[(gf.log[poly[j]] + gf.log[factor[k]]) % 255];
+                    poly = result;
+                }
+                return poly;
+            }
+
+            function placeData(modules, reserved, bits, size) {
+                let idx = 0, up = true;
+                for (let col = size-1; col >= 1; col -= 2) {
+                    if (col === 6) col = 5;
+                    const rows = up ? Array.from({length: size}, (_,i) => size-1-i) : Array.from({length: size}, (_,i) => i);
+                    for (const row of rows) for (const dc of [0,-1]) {
+                        const c = col + dc;
+                        if (c < 0 || reserved[row][c]) continue;
+                        modules[row][c] = idx < bits.length ? bits[idx++] === 1 : false;
+                    }
+                    up = !up;
+                }
+            }
+
+            function applyBestMask(modules, reserved, size) {
+                let best = Infinity, bestM = 0;
+                for (let m = 0; m < 8; m++) {
+                    const copy = modules.map(r => r.slice());
+                    applyMask(copy, reserved, m, size);
+                    const p = calcPenalty(copy, size);
+                    if (p < best) { best = p; bestM = m; }
+                }
+                applyMask(modules, reserved, bestM, size);
+                return bestM;
+            }
+
+            function applyMask(modules, reserved, mask, size) {
+                for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+                    if (reserved[r][c]) continue;
+                    let flip = false;
+                    switch (mask) {
+                        case 0: flip = (r+c)%2===0; break; case 1: flip = r%2===0; break;
+                        case 2: flip = c%3===0; break; case 3: flip = (r+c)%3===0; break;
+                        case 4: flip = (Math.floor(r/2)+Math.floor(c/3))%2===0; break;
+                        case 5: flip = (r*c)%2+(r*c)%3===0; break;
+                        case 6: flip = ((r*c)%2+(r*c)%3)%2===0; break;
+                        case 7: flip = ((r+c)%2+(r*c)%3)%2===0; break;
+                    }
+                    if (flip) modules[r][c] = !modules[r][c];
+                }
+            }
+
+            function calcPenalty(modules, size) {
+                let p = 0;
+                for (let r = 0; r < size; r++) { let run = 1; for (let c = 1; c < size; c++) { if (modules[r][c] === modules[r][c-1]) run++; else { if (run >= 5) p += run-2; run = 1; } } if (run >= 5) p += run-2; }
+                for (let c = 0; c < size; c++) { let run = 1; for (let r = 1; r < size; r++) { if (modules[r][c] === modules[r-1][c]) run++; else { if (run >= 5) p += run-2; run = 1; } } if (run >= 5) p += run-2; }
+                return p;
+            }
+
+            function addFormatBits(modules, mask, size) {
+                const formatData = (1 << 3) | mask;
+                let rem = formatData;
+                for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >> 9) * 0x537);
+                const bits = ((formatData << 10) | rem) ^ 0x5412;
+                const p1 = [[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[7,8],[8,8],[8,7],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0]];
+                const p2 = [[8,size-1],[8,size-2],[8,size-3],[8,size-4],[8,size-5],[8,size-6],[8,size-7],[8,size-8],[size-7,8],[size-6,8],[size-5,8],[size-4,8],[size-3,8],[size-2,8],[size-1,8]];
+                for (let i = 0; i < 15; i++) { const bit = ((bits >> (14-i)) & 1) === 1; modules[p1[i][0]][p1[i][1]] = bit; modules[p2[i][0]][p2[i][1]] = bit; }
+            }
+
+            function addVersionBits(modules, version, size) {
+                if (version < 7) return;
+                let rem = version;
+                for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >> 11) * 0x1F25);
+                const bits = (version << 12) | rem;
+                for (let i = 0; i < 18; i++) { const bit = ((bits >> i) & 1) === 1; const r = Math.floor(i/3), c = size-11+(i%3); modules[r][c] = bit; modules[c][r] = bit; }
+            }
+
+            function getTotalCodewords(version) {
+                const size = version*4+17; let total = size*size;
+                total -= 3*64; total -= 3*15; total -= 2*(size-16); total -= 1;
+                if (version >= 2) { const n = Math.floor(version/7)+2; total -= (n*n-3)*25; }
+                if (version >= 7) total -= 36;
+                total -= 31;
+                return Math.floor(total / 8);
+            }
+
+            function getECCodewords(version) {
+                const ec = [0,7,10,15,20,26,18,20,24,30,18,20,24,26,30,22,24,28,30,28,28];
+                return version < ec.length ? ec[version] : 30;
+            }
+
+            return { generate };
+        })();
+
+        /* ===========================================
+           INLINE EDITOR
+           =========================================== */
+        class InlineEditor {
+            constructor() {
+                this.isActive = false;
+                this.editToggle = document.getElementById('editToggle');
+                this.editBanner = document.getElementById('editBanner');
+                this.editableEls = document.querySelectorAll('h1, .tagline, .eyebrow, .qr-label, .qr-url, .corner-mark');
+                this.setupHotzone();
+                this.setupKeyboard();
+                this.loadSaved();
+            }
+            setupHotzone() {
+                const hz = document.getElementById('editHotzone');
+                let t = null;
+                hz.addEventListener('mouseenter', () => { clearTimeout(t); this.editToggle.classList.add('show'); });
+                hz.addEventListener('mouseleave', () => { t = setTimeout(() => { if (!this.isActive) this.editToggle.classList.remove('show'); }, 400); });
+                this.editToggle.addEventListener('mouseenter', () => clearTimeout(t));
+                this.editToggle.addEventListener('mouseleave', () => { t = setTimeout(() => { if (!this.isActive) this.editToggle.classList.remove('show'); }, 400); });
+                this.editToggle.addEventListener('click', () => this.toggle());
+                hz.addEventListener('click', () => this.toggle());
+            }
+            setupKeyboard() {
+                document.addEventListener('keydown', (e) => {
+                    if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) this.toggle();
+                    if (e.ctrlKey && e.key === 's') { e.preventDefault(); this.save(); }
+                });
+            }
+            toggle() {
+                this.isActive = !this.isActive;
+                this.editToggle.classList.toggle('active', this.isActive);
+                this.editBanner.classList.toggle('show', this.isActive);
+                this.editableEls.forEach(el => { el.contentEditable = this.isActive ? 'true' : 'false'; });
+                if (!this.isActive) this.save();
+            }
+            save() {
+                const data = {};
+                this.editableEls.forEach((el, i) => { data[`el-${i}`] = el.innerHTML; });
+                localStorage.setItem('stateless-summit-closing', JSON.stringify(data));
+            }
+            loadSaved() {
+                try {
+                    const data = JSON.parse(localStorage.getItem('stateless-summit-closing'));
+                    if (data) this.editableEls.forEach((el, i) => { if (data[`el-${i}`] !== undefined) el.innerHTML = data[`el-${i}`]; });
+                } catch(e) {}
+            }
+        }
+
+        /* Initialize */
+        document.addEventListener('DOMContentLoaded', () => {
+            QRCode.generate('https://stateless.fyi/resources.html', document.getElementById('qr-resources'), 200);
+            QRCode.generate('https://stateless.fyi/summit/intro.html', document.getElementById('qr-summit'), 200);
+            QRCode.generate('https://x.com/StatelessEth', document.getElementById('qr-twitter'), 200);
+            new InlineEditor();
+        });
+    </script>
+</body>
+</html>
