@@ -580,8 +580,11 @@ layout: null
             font-size: var(--small-size);
             color: var(--text-light);
             font-weight: 700;
-            min-width: clamp(6rem, 12vw, 10rem);
+            width: clamp(8rem, 18vw, 14rem);
             flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .agenda-title {
@@ -676,6 +679,113 @@ layout: null
             letter-spacing: 0.15em;
             color: var(--text-muted);
             margin-top: 0.3em;
+        }
+
+        /* ===========================================
+           STATE GROWTH SLIDE
+           =========================================== */
+        .growth-slide {
+            flex-direction: row;
+        }
+
+        .growth-chart-panel {
+            flex: 1.2;
+            background: var(--bg-darker);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: var(--slide-padding);
+            position: relative;
+        }
+
+        .growth-chart-panel canvas {
+            width: 100%;
+            max-width: 520px;
+            height: auto;
+            max-height: min(55vh, 380px);
+        }
+
+        .chart-caption {
+            font-family: var(--font-body);
+            font-size: var(--tiny-size);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-top: clamp(0.5rem, 1vh, 1rem);
+            text-align: center;
+        }
+
+        .growth-text-panel {
+            flex: 1;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--slide-padding);
+            position: relative;
+        }
+
+        .growth-text-panel::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 15%; bottom: 15%;
+            width: 3px;
+            background: #ff4444;
+            box-shadow: 0 0 12px rgba(255, 68, 68, 0.4);
+        }
+
+        .growth-text-panel h2 {
+            font-family: var(--font-display);
+            font-size: var(--h2-size);
+            font-weight: 800;
+            color: var(--text-light);
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            margin-bottom: clamp(0.75rem, 2vh, 1.5rem);
+        }
+
+        .growth-text-panel h2 .warning {
+            color: #ff4444;
+        }
+
+        .problem-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.6rem, 1.5vh, 1.2rem);
+        }
+
+        .problem-list li {
+            font-size: var(--body-size);
+            color: var(--text-muted);
+            line-height: 1.6;
+            padding-left: clamp(1rem, 2vw, 1.5rem);
+            position: relative;
+        }
+
+        .problem-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.55em;
+            width: 6px;
+            height: 6px;
+            background: #ff4444;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .growth-slide {
+                flex-direction: column;
+            }
+            .growth-chart-panel,
+            .growth-text-panel {
+                flex: 1;
+            }
+            .growth-text-panel::before {
+                display: none;
+            }
         }
 
         /* ===========================================
@@ -886,7 +996,25 @@ layout: null
     </section>
 
     <!-- ===========================================
-         SLIDE 3: WHY IT MATTERS — 3 PILLARS
+         SLIDE 3: THE STATE GROWTH PROBLEM
+         =========================================== -->
+    <section class="slide growth-slide" aria-label="State growth problem">
+        <div class="growth-chart-panel">
+            <canvas id="stateGrowthChart" width="520" height="360"></canvas>
+            <div class="chart-caption reveal">Ethereum State Size Over Time</div>
+        </div>
+        <div class="growth-text-panel">
+            <h2 class="reveal-right">The <span class="warning">State Growth</span> Problem</h2>
+            <ul class="problem-list">
+                <li class="reveal-right"><strong>Performance degrades over time</strong> — As the state grows, database lookups get slower. Every transaction pays the cost of an ever-larger trie.</li>
+                <li class="reveal-right"><strong>Misaligned incentives</strong> — Anyone can store data on-chain forever, but node operators bear the cost. This is a tragedy of the commons: individuals benefit while the network suffers.</li>
+                <li class="reveal-right"><strong>Centralizing pressure</strong> — Growing hardware requirements push out solo validators, concentrating power in fewer hands.</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===========================================
+         SLIDE 4: WHY IT MATTERS — 3 PILLARS
          =========================================== -->
     <section class="slide content-slide" aria-label="Why Stateless Matters">
         <div class="slide-content">
@@ -904,9 +1032,9 @@ layout: null
                     <p>Run nodes on lightweight devices. Lower the barrier to participate.</p>
                 </div>
                 <div class="feature-card reveal">
-                    <div class="icon">&#128274;</div>
-                    <h3>Innovation</h3>
-                    <p>State expiry, rainbow staking, trustless light clients — all unlocked.</p>
+                    <div class="icon">&#128241;</div>
+                    <h3>User Experience</h3>
+                    <p>Native rollups, smarter wallets, and seamless dApp interactions — all enabled by lighter infrastructure.</p>
                 </div>
             </div>
         </div>
@@ -930,39 +1058,64 @@ layout: null
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
                     <span class="agenda-speaker">Hadrien Croubois</span>
-                    <span class="agenda-title"></span>
+                    <span class="agenda-title">Smart contract design for a stateless Ethereum</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-lightning">Lightning</span>
-                    <span class="agenda-speaker">Wei Han Ng</span>
-                    <span class="agenda-title"></span>
+                    <span class="agenda-speaker">Wei Han</span>
+                    <span class="agenda-title">New Categories of Ethereum State</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
-                    <span class="agenda-speaker">Zsolt</span>
-                    <span class="agenda-title"></span>
+                    <span class="agenda-speaker">Zsolt Felföldi</span>
+                    <span class="agenda-title">Improving scalability with log index tables</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-lightning">Lightning</span>
-                    <span class="agenda-speaker">Ali &middot; Carlos Perez &middot; Kev</span>
-                    <span class="agenda-title"></span>
+                    <span class="agenda-speaker">Ali</span>
+                    <span class="agenda-title">PIR for Ethereum Private RPC</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Robert MacWha</span>
+                    <span class="agenda-title">Do Wallets Need JSON-RPC?</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Carlos Pérez</span>
+                    <span class="agenda-title">Binary trees: where we stand</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Kev Wedderburn</span>
+                    <span class="agenda-title">EVMfying precompiles</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-lightning">Lightning</span>
                     <span class="agenda-speaker">Dan Goron</span>
                     <span class="agenda-title">Partial Statefulness</span>
                 </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Tomas Arjovsky & Ivan Litteri</span>
+                    <span class="agenda-title">Ethrex Stateless Execution</span>
+                </li>
                 <li class="agenda-item highlight reveal">
                     <span class="agenda-type type-panel">Panel</span>
-                    <span class="agenda-speaker">Marek + Luis + Mark + Guillaume + Fede</span>
+                    <span class="agenda-speaker">Marek Moraczyński + Luis Pinto + Mark Holt + Guillaume Ballet + Fede</span>
                     <span class="agenda-title">Stateless EIP mini-ACD</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-break">Break</span>
+                    <span class="agenda-speaker">🍽️ Lunch</span>
+                    <span class="agenda-title"></span>
                 </li>
             </ul>
         </div>
     </section>
 
     <!-- ===========================================
-         SLIDE 5: AGENDA — AFTERNOON
+         SLIDE 6: AGENDA — AFTERNOON
          =========================================== -->
     <section class="slide agenda-slide" aria-label="Afternoon agenda">
         <div class="slide-content">
@@ -974,22 +1127,22 @@ layout: null
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-lightning">Lightning</span>
                     <span class="agenda-speaker">Matan Prasma</span>
-                    <span class="agenda-title">Post-Quantum Verkle</span>
+                    <span class="agenda-title">Exploring Post-Quantum Verkle</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
-                    <span class="agenda-speaker">Victor Naumic</span>
-                    <span class="agenda-title">Shinode</span>
+                    <span class="agenda-speaker">Victor Naumik</span>
+                    <span class="agenda-title">SHiNode</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
                     <span class="agenda-speaker">Simon Jentzsch</span>
-                    <span class="agenda-title">Trustless Verification — Colibri-Stateless</span>
+                    <span class="agenda-title">Deep Dive: Trustless Verification with Colibri-Stateless</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
-                    <span class="agenda-speaker">Jordi</span>
-                    <span class="agenda-title">A Privacy Layer for Ethereum</span>
+                    <span class="agenda-speaker">Jordi Baylina</span>
+                    <span class="agenda-title">A Privacy layer for Ethereum</span>
                 </li>
                 <li class="agenda-item reveal">
                     <span class="agenda-type type-talk">Talk</span>
@@ -1002,45 +1155,36 @@ layout: null
                     <span class="agenda-title">Linea</span>
                 </li>
                 <li class="agenda-item reveal">
-                    <span class="agenda-type type-talk">Talk</span>
-                    <span class="agenda-speaker">Neville (Dedaub) &middot; Nikita Sheremet</span>
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Nico Consigny</span>
+                    <span class="agenda-title">Who holds the state?</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-break">Break</span>
+                    <span class="agenda-speaker">☕ Coffee</span>
                     <span class="agenda-title"></span>
                 </li>
                 <li class="agenda-item reveal">
+                    <span class="agenda-type type-talk">Talk</span>
+                    <span class="agenda-speaker">Neville Grech</span>
+                    <span class="agenda-title">You Pay for What You Touch: Locality as Ethereum’s Next Cost Model</span>
+                </li>
+                <li class="agenda-item reveal">
                     <span class="agenda-type type-lightning">Lightning</span>
-                    <span class="agenda-speaker">Ali &middot; Nico &middot; Alejandro</span>
-                    <span class="agenda-title"></span>
+                    <span class="agenda-speaker">Ali</span>
+                    <span class="agenda-title">Network-level Privacy for Ethereum RPC Traffic</span>
+                </li>
+                <li class="agenda-item reveal">
+                    <span class="agenda-type type-lightning">Lightning</span>
+                    <span class="agenda-speaker">Alejandro Ranchal-Pedrosa</span>
+                    <span class="agenda-title">BUDs: Stateless Membership Proofs Without a Global State Tree</span>
                 </li>
             </ul>
         </div>
     </section>
 
     <!-- ===========================================
-         SLIDE 6: VISION / STATS
-         =========================================== -->
-    <section class="slide vision-slide" aria-label="Vision and stats">
-        <div class="vision-left">
-            <h2 class="reveal-left">A Full Day<br>of Building<br>the Future</h2>
-            <p class="reveal-left">Talks, lightning sessions, and a panel covering everything from Verkle trees to post-quantum cryptography, privacy layers, and trustless verification.</p>
-        </div>
-        <div class="vision-right">
-            <div class="stat-block reveal-right">
-                <div class="number">20+</div>
-                <div class="desc">Speakers</div>
-            </div>
-            <div class="stat-block reveal-right">
-                <div class="number">1</div>
-                <div class="desc">Panel Discussion</div>
-            </div>
-            <div class="stat-block reveal-right">
-                <div class="number">1</div>
-                <div class="desc">Mission</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===========================================
-         SLIDE 7: CLOSING / LET'S GO
+         CLOSING / LET'S GO
          =========================================== -->
     <section class="slide closing-slide" aria-label="Closing">
         <div class="closing-left">
@@ -1309,6 +1453,128 @@ layout: null
                 URL.revokeObjectURL(url);
             }
         }
+
+        /* ===========================================
+           STATE GROWTH CHART (Canvas)
+           =========================================== */
+        function drawStateGrowthChart() {
+            const canvas = document.getElementById('stateGrowthChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+            const pad = { top: 30, right: 20, bottom: 50, left: 60 };
+            const chartW = W - pad.left - pad.right;
+            const chartH = H - pad.top - pad.bottom;
+
+            /* Approximate Ethereum state size data (GB) by year */
+            const data = [
+                { year: 2016, size: 1 },
+                { year: 2017, size: 5 },
+                { year: 2018, size: 15 },
+                { year: 2019, size: 25 },
+                { year: 2020, size: 40 },
+                { year: 2021, size: 80 },
+                { year: 2022, size: 120 },
+                { year: 2023, size: 180 },
+                { year: 2024, size: 250 },
+                { year: 2025, size: 320 },
+                { year: 2026, size: 400 },
+            ];
+
+            const minYear = 2016, maxYear = 2026;
+            const maxSize = 450;
+
+            function xPos(year) { return pad.left + ((year - minYear) / (maxYear - minYear)) * chartW; }
+            function yPos(size) { return pad.top + chartH - (size / maxSize) * chartH; }
+
+            /* Clear */
+            ctx.clearRect(0, 0, W, H);
+
+            /* Grid lines */
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            for (let g = 0; g <= maxSize; g += 100) {
+                ctx.beginPath();
+                ctx.moveTo(pad.left, yPos(g));
+                ctx.lineTo(W - pad.right, yPos(g));
+                ctx.stroke();
+            }
+
+            /* Axes */
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad.left, pad.top);
+            ctx.lineTo(pad.left, pad.top + chartH);
+            ctx.lineTo(W - pad.right, pad.top + chartH);
+            ctx.stroke();
+
+            /* Y-axis labels */
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '11px "Space Mono", monospace';
+            ctx.textAlign = 'right';
+            for (let g = 0; g <= maxSize; g += 100) {
+                ctx.fillText(g + ' GB', pad.left - 8, yPos(g) + 4);
+            }
+
+            /* X-axis labels */
+            ctx.textAlign = 'center';
+            data.forEach(d => {
+                if (d.year % 2 === 0) {
+                    ctx.fillText(d.year, xPos(d.year), pad.top + chartH + 20);
+                }
+            });
+
+            /* Gradient fill under curve */
+            const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+            grad.addColorStop(0, 'rgba(255, 68, 68, 0.35)');
+            grad.addColorStop(1, 'rgba(255, 68, 68, 0.02)');
+
+            ctx.beginPath();
+            ctx.moveTo(xPos(data[0].year), yPos(data[0].size));
+            for (let i = 1; i < data.length; i++) {
+                const xc = (xPos(data[i - 1].year) + xPos(data[i].year)) / 2;
+                const yc = (yPos(data[i - 1].size) + yPos(data[i].size)) / 2;
+                ctx.quadraticCurveTo(xPos(data[i - 1].year), yPos(data[i - 1].size), xc, yc);
+            }
+            ctx.quadraticCurveTo(xPos(data[data.length - 2].year), yPos(data[data.length - 2].size),
+                                  xPos(data[data.length - 1].year), yPos(data[data.length - 1].size));
+            ctx.lineTo(xPos(data[data.length - 1].year), pad.top + chartH);
+            ctx.lineTo(xPos(data[0].year), pad.top + chartH);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            /* Line */
+            ctx.beginPath();
+            ctx.moveTo(xPos(data[0].year), yPos(data[0].size));
+            for (let i = 1; i < data.length; i++) {
+                const xc = (xPos(data[i - 1].year) + xPos(data[i].year)) / 2;
+                const yc = (yPos(data[i - 1].size) + yPos(data[i].size)) / 2;
+                ctx.quadraticCurveTo(xPos(data[i - 1].year), yPos(data[i - 1].size), xc, yc);
+            }
+            ctx.quadraticCurveTo(xPos(data[data.length - 2].year), yPos(data[data.length - 2].size),
+                                  xPos(data[data.length - 1].year), yPos(data[data.length - 1].size));
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = 'rgba(255, 68, 68, 0.5)';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            /* Data points */
+            data.forEach(d => {
+                ctx.beginPath();
+                ctx.arc(xPos(d.year), yPos(d.size), 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff4444';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(26, 26, 46, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        drawStateGrowthChart();
 
         /* Initialize */
         const presentation = new SlidePresentation();
