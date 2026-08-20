@@ -1,0 +1,1492 @@
+---
+title: "State Archival — moving cold state out of the database"
+layout: null
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Archival — go-ethereum PR #33906</title>
+
+    <!-- Fonts: JetBrains Mono only — monospace-as-voice, the "Terminal Ledger" style -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+    <style>
+    /* ===========================================================
+       VIEWPORT FITTING: MANDATORY BASE STYLES
+       (verbatim from the skill's viewport-base.css — do not trim)
+       =========================================================== */
+
+    /* 1. Lock html/body to viewport */
+    html, body {
+        height: 100%;
+        overflow-x: hidden;
+    }
+
+    html {
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+    }
+
+    /* 2. Each slide = exact viewport height */
+    .slide {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        overflow: hidden; /* CRITICAL: Prevent ANY overflow */
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    /* 3. Content container with flex for centering */
+    .slide-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-height: 100%;
+        overflow: hidden; /* Double-protection against overflow */
+        padding: var(--slide-padding);
+    }
+
+    /* 4. ALL typography uses clamp() for responsive scaling */
+    :root {
+        /* Titles scale from mobile to desktop */
+        --title-size: clamp(1.5rem, 5vw, 4rem);
+        --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+        --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+
+        /* Body text */
+        --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+        --small-size: clamp(0.65rem, 1vw, 0.875rem);
+
+        /* Spacing scales with viewport */
+        --slide-padding: clamp(1rem, 4vw, 4rem);
+        --content-gap: clamp(0.5rem, 2vw, 2rem);
+        --element-gap: clamp(0.25rem, 1vw, 1rem);
+    }
+
+    /* 5. Cards/containers use viewport-relative max sizes */
+    .card, .container, .content-box {
+        max-width: min(90vw, 1000px);
+        max-height: min(80vh, 700px);
+    }
+
+    /* 6. Lists auto-scale with viewport */
+    .feature-list, .bullet-list {
+        gap: clamp(0.4rem, 1vh, 1rem);
+    }
+
+    .feature-list li, .bullet-list li {
+        font-size: var(--body-size);
+        line-height: 1.4;
+    }
+
+    /* 7. Grids adapt to available space */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+        gap: clamp(0.5rem, 1.5vw, 1rem);
+    }
+
+    /* 8. Images constrained to viewport */
+    img, .image-container {
+        max-width: 100%;
+        max-height: min(50vh, 400px);
+        object-fit: contain;
+    }
+
+    /* ===========================================
+       RESPONSIVE BREAKPOINTS
+       Aggressive scaling for smaller viewports
+       =========================================== */
+
+    /* Short viewports (< 700px height) */
+    @media (max-height: 700px) {
+        :root {
+            --slide-padding: clamp(0.75rem, 3vw, 2rem);
+            --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+            --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+            --h2-size: clamp(1rem, 3vw, 1.75rem);
+        }
+    }
+
+    /* Very short viewports (< 600px height) */
+    @media (max-height: 600px) {
+        :root {
+            --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+            --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+            --title-size: clamp(1.1rem, 4vw, 2rem);
+            --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+        }
+
+        /* Hide non-essential elements */
+        .nav-dots, .keyboard-hint, .decorative {
+            display: none;
+        }
+    }
+
+    /* Extremely short (landscape phones, < 500px height) */
+    @media (max-height: 500px) {
+        :root {
+            --slide-padding: clamp(0.4rem, 2vw, 1rem);
+            --title-size: clamp(1rem, 3.5vw, 1.5rem);
+            --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+            --body-size: clamp(0.65rem, 1vw, 0.85rem);
+        }
+    }
+
+    /* Narrow viewports (< 600px width) */
+    @media (max-width: 600px) {
+        :root {
+            --title-size: clamp(1.25rem, 7vw, 2.5rem);
+        }
+
+        /* Stack grids vertically */
+        .grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ===========================================
+       REDUCED MOTION
+       Respect user preferences
+       =========================================== */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.2s !important;
+        }
+
+        html {
+            scroll-behavior: auto;
+        }
+    }
+
+    /* ===========================================================
+       THEME: TERMINAL LEDGER
+       Dark developer console. Monospace-only typography, phosphor
+       green primary, amber secondary, red for cost/risk. Scanline
+       texture + hairline plotting grid for depth.
+       =========================================================== */
+    :root {
+        --bg:        #0d1117;   /* slide field */
+        --bg-deep:   #010409;   /* page behind slides */
+        --bg-lift:   #161b22;   /* raised panels */
+        --line:      rgba(57, 211, 83, 0.14);
+        --hair:      rgba(201, 209, 217, 0.14);
+
+        --green:     #39d353;   /* primary accent */
+        --green-dim: #1f7a33;
+        --amber:     #e3b341;   /* secondary accent: measurements */
+        --red:       #f85149;   /* cost, risk, caveat */
+        --text:      #c9d1d9;
+        --text-hi:   #ffffff;
+        --mute:      #6e7681;
+
+        --font: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+        /* Type scale overrides (still clamp-based, tuned for mono) */
+        --title-size: clamp(1.6rem, 5.4vw, 4.2rem);
+        --h2-size:    clamp(1.15rem, 3.2vw, 2.35rem);
+        --h3-size:    clamp(0.95rem, 2vw, 1.4rem);
+        --body-size:  clamp(0.72rem, 1.32vw, 1.05rem);
+        --small-size: clamp(0.58rem, 0.95vw, 0.8rem);
+        --code-size:  clamp(0.6rem, 1.12vw, 0.95rem);
+        --stat-size:  clamp(1.1rem, 2.9vw, 2.2rem);
+
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur: 0.7s;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: var(--bg-deep);
+        color: var(--text);
+        font-family: var(--font);
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+        /* `height: 100%` + `overflow-x: hidden` (from the base rules above) turn
+           BODY into the scroll container instead of the root element, so the
+           base `scroll-snap-type` on <html> never takes effect. Repeat it here
+           or wheel/trackpad scrolling strands the deck between two slides. */
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+    }
+
+    /* === SLIDE FIELD: gradients + grid + scanlines ============ */
+    .slide {
+        background:
+            radial-gradient(ellipse at 12% 108%, rgba(57, 211, 83, 0.13) 0%, transparent 55%),
+            radial-gradient(ellipse at 92% -8%, rgba(227, 179, 65, 0.07) 0%, transparent 50%),
+            var(--bg);
+    }
+    /* hairline plotting grid, masked so it fades out */
+    .slide::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+            linear-gradient(var(--line) 1px, transparent 1px),
+            linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: clamp(28px, 4vw, 54px) clamp(28px, 4vw, 54px);
+        -webkit-mask-image: radial-gradient(ellipse at 25% 75%, #000 18%, transparent 76%);
+                mask-image: radial-gradient(ellipse at 25% 75%, #000 18%, transparent 76%);
+    }
+    /* CRT scanlines */
+    .slide::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.3;
+        background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0 1px, transparent 1px 3px);
+    }
+
+    /* === SLIDE CHROME: rails, counter, section tag ============ */
+    .rail {
+        position: absolute;
+        top: var(--slide-padding);
+        left: var(--slide-padding);
+        right: var(--slide-padding);
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: var(--small-size);
+        letter-spacing: 0.12em;
+        color: var(--mute);
+        z-index: 4;
+    }
+    .rail .prompt-sym { color: var(--green); font-weight: 700; }
+    .rail .counter { color: var(--text); }
+    .rail .counter i { color: var(--mute); font-style: normal; }
+
+    .stamp {
+        position: absolute;
+        bottom: var(--slide-padding);
+        right: var(--slide-padding);
+        font-size: var(--small-size);
+        letter-spacing: 0.14em;
+        color: var(--mute);
+        text-transform: uppercase;
+        z-index: 4;
+    }
+
+    /* content sits above grid/scanline pseudo-elements */
+    .slide-content { position: relative; z-index: 3; gap: var(--content-gap); }
+    .slide-content > * { max-width: min(94vw, 1180px); }
+
+    /* === TYPOGRAPHY =========================================== */
+    h1 {
+        font-size: var(--title-size);
+        font-weight: 800;
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+        color: var(--text-hi);
+        text-shadow: 0 0 clamp(14px, 2.4vw, 34px) rgba(57, 211, 83, 0.3);
+        text-wrap: balance;
+    }
+    h1 em { font-style: normal; color: var(--green); }
+
+    h2 {
+        font-size: var(--h2-size);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: var(--text-hi);
+        text-wrap: balance;
+    }
+    h2 em { font-style: normal; color: var(--green); }
+    h2 s { text-decoration: none; color: var(--amber); }
+
+    h3 {
+        font-size: var(--h3-size);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--green);
+    }
+
+    p { font-size: var(--body-size); line-height: 1.55; max-width: 62ch; }
+    p.lede { color: var(--text); }
+    p.note { font-size: var(--small-size); color: var(--mute); max-width: 78ch; }
+    strong { color: var(--text-hi); font-weight: 700; }
+    b.g { color: var(--green); font-weight: 700; }
+    b.a { color: var(--amber); font-weight: 700; }
+    b.r { color: var(--red); font-weight: 700; }
+
+    /* kicker: the "> command" line above a heading */
+    .kicker {
+        font-size: var(--small-size);
+        letter-spacing: 0.2em;
+        color: var(--green-dim);
+        text-transform: uppercase;
+    }
+    .kicker b { color: var(--green); font-weight: 700; }
+
+    /* blinking block cursor */
+    .cursor {
+        display: inline-block;
+        width: 0.52em;
+        height: 0.9em;
+        background: var(--green);
+        vertical-align: -0.06em;
+        margin-left: 0.14em;
+        animation: blink 1.05s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .rule {
+        height: 1px;
+        border: 0;
+        background: linear-gradient(90deg, var(--green), transparent 85%);
+        transform-origin: left;
+    }
+
+    /* === LISTS ================================================ */
+    .bullet-list { list-style: none; display: flex; flex-direction: column; }
+    .bullet-list li {
+        display: grid;
+        grid-template-columns: clamp(1.1rem, 2vw, 1.9rem) 1fr;
+        align-items: baseline;
+        color: var(--text);
+    }
+    .bullet-list li::before {
+        content: '›';
+        color: var(--green);
+        font-weight: 700;
+    }
+    .bullet-list li b { color: var(--text-hi); }
+    .bullet-list.cost li::before { content: '×'; color: var(--red); }
+    .bullet-list.tight li { line-height: 1.35; }
+
+    /* === TAGS ================================================= */
+    .tags { display: flex; flex-wrap: wrap; gap: clamp(0.35rem, 0.9vw, 0.8rem); }
+    .tag {
+        font-size: var(--small-size);
+        letter-spacing: 0.1em;
+        padding: 0.42em 0.8em;
+        border: 1px solid var(--green-dim);
+        color: var(--green);
+        background: rgba(57, 211, 83, 0.06);
+        white-space: nowrap;
+    }
+    .tag.amber { border-color: rgba(227, 179, 65, 0.5); color: var(--amber); background: rgba(227, 179, 65, 0.06); }
+    .tag.plain { border-color: var(--hair); color: var(--mute); background: transparent; }
+
+    /* === CODE BLOCKS ========================================== */
+    .code {
+        border: 1px solid var(--hair);
+        border-left: 2px solid var(--green);
+        background: linear-gradient(180deg, rgba(22, 27, 34, 0.95), rgba(1, 4, 9, 0.9));
+        padding: clamp(0.6rem, 1.6vw, 1.4rem) clamp(0.7rem, 1.8vw, 1.6rem);
+        max-height: min(58vh, 480px);
+        overflow: hidden;
+    }
+    .code pre { font-size: var(--code-size); line-height: 1.65; white-space: pre; overflow: hidden; }
+    .code .c { color: var(--mute); }              /* comment */
+    .code .k { color: #ff7b72; }                   /* keyword */
+    .code .t { color: var(--amber); }              /* type */
+    .code .s { color: var(--green); }              /* string / literal */
+    .code .f { color: #79c0ff; }                   /* function / flag */
+    .code-caption { font-size: var(--small-size); color: var(--mute); }
+
+    /* === STAT GRID ============================================ */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(140px, 17vw, 230px)), 1fr));
+        gap: clamp(0.4rem, 1.1vw, 1rem);
+    }
+    /* six figures read as a 3x2 block, never 5 + 1 orphan */
+    .stats.three { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 760px) { .stats.three { grid-template-columns: repeat(2, 1fr); } }
+    .stat {
+        border-top: 1.5px solid var(--green-dim);
+        background: rgba(22, 27, 34, 0.6);
+        padding: clamp(0.4rem, 1vw, 0.85rem) clamp(0.5rem, 1.1vw, 0.95rem);
+    }
+    .stat .label { font-size: var(--small-size); letter-spacing: 0.12em; color: var(--mute); text-transform: uppercase; }
+    .stat .value { font-size: var(--stat-size); font-weight: 800; letter-spacing: -0.02em; color: var(--text-hi); line-height: 1.15; }
+    .stat .delta { font-size: var(--small-size); font-weight: 700; }
+    .stat .delta.up { color: var(--green); }
+    .stat .delta.down { color: var(--amber); }
+    .stat.hot { border-top-color: var(--green); box-shadow: 0 0 clamp(10px, 2vw, 26px) rgba(57, 211, 83, 0.12) inset; }
+
+    /* === HERO STAT (one enormous number) ====================== */
+    .hero-stat {
+        display: flex;
+        align-items: baseline;
+        gap: clamp(0.4rem, 1.4vw, 1.2rem);
+        flex-wrap: wrap;
+    }
+    .hero-stat .num {
+        font-size: clamp(3rem, 15vw, 11rem);
+        font-weight: 800;
+        line-height: 0.85;
+        letter-spacing: -0.05em;
+        color: var(--green);
+        text-shadow: 0 0 clamp(20px, 4vw, 60px) rgba(57, 211, 83, 0.4);
+    }
+    .hero-stat .unit { font-size: var(--h3-size); color: var(--text); letter-spacing: 0.04em; }
+
+    /* 10x10 state map: 3 lit cells out of 100 */
+    .statemap {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        gap: clamp(2px, 0.35vw, 5px);
+        width: min(52vw, 460px);
+        max-height: 22vh;
+    }
+    .statemap i {
+        aspect-ratio: 1;
+        background: rgba(201, 209, 217, 0.09);
+        border-radius: 1px;
+    }
+    .statemap i.hot {
+        background: var(--green);
+        box-shadow: 0 0 8px rgba(57, 211, 83, 0.7);
+        animation: flicker 3.4s ease-in-out infinite;
+    }
+    .statemap i.hot:nth-of-type(3n) { animation-delay: -1.2s; }
+    @keyframes flicker { 45% { opacity: 0.45; } }
+
+    /* === TWO-COLUMN COMPARE =================================== */
+    .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+        gap: clamp(0.6rem, 2vw, 2rem);
+    }
+    .col {
+        border: 1px solid var(--hair);
+        border-top: 2px solid var(--mute);
+        padding: clamp(0.6rem, 1.4vw, 1.2rem);
+        background: rgba(22, 27, 34, 0.5);
+        display: flex;
+        flex-direction: column;
+        gap: var(--element-gap);
+    }
+    .col.now { border-top-color: var(--green); }
+    .col h3 { font-size: var(--h3-size); color: var(--mute); }
+    .col.now h3 { color: var(--green); }
+    .col .bullet-list li { font-size: var(--body-size); }
+
+    /* === BAR CHART (CSS-only) ================================= */
+    .chart { display: flex; flex-direction: column; gap: clamp(0.35rem, 1vh, 0.85rem); }
+    /* label | twin bars | figures — baseline and archival are stacked, never
+       overlaid, so the comparison is actually visible. */
+    .bar-row {
+        display: grid;
+        grid-template-columns: clamp(74px, 11vw, 140px) 1fr clamp(96px, 13vw, 160px);
+        align-items: center;
+        gap: clamp(0.4rem, 1vw, 0.9rem);
+    }
+    .bar-row .bar-label { font-size: var(--small-size); color: var(--mute); white-space: nowrap; }
+    .bar-track { display: flex; flex-direction: column; gap: clamp(2px, 0.35vh, 4px); }
+    .bar { position: relative; height: clamp(8px, 1.7vh, 15px); background: rgba(201, 209, 217, 0.06); }
+    .bar > i {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform-origin: left;
+        transform: scaleX(0);
+        transition: transform 1s var(--ease);
+    }
+    .bar.base > i { background: rgba(201, 209, 217, 0.3); }
+    .bar.arch > i { background: linear-gradient(90deg, var(--green-dim), var(--green)); box-shadow: 0 0 12px rgba(57, 211, 83, 0.3); }
+    .slide.visible .bar.base > i { transform: scaleX(1); transition-delay: 0.15s; }
+    .slide.visible .bar.arch > i { transform: scaleX(1); transition-delay: 0.4s; }
+    .bar-figs { font-size: var(--small-size); color: var(--mute); text-align: right; white-space: nowrap; }
+    .bar-figs b { color: var(--green); font-weight: 700; }
+    .bar-figs em { font-style: normal; color: var(--text-hi); }
+    .legend { display: flex; gap: clamp(0.6rem, 1.6vw, 1.4rem); font-size: var(--small-size); color: var(--mute); flex-wrap: wrap; }
+    .legend i { display: inline-block; width: 0.8em; height: 0.8em; margin-right: 0.4em; }
+    .legend i.base { background: rgba(201, 209, 217, 0.3); }
+    .legend i.arch { background: var(--green); }
+
+    /* === DIAGRAMS (inline SVG) ================================ */
+    .diagram { width: 100%; max-height: min(46vh, 380px); }
+    .diagram text { font-family: var(--font); fill: var(--text); }
+    .diagram .lbl { font-size: 13px; fill: var(--mute); }
+    .diagram .lbl-g { font-size: 13px; fill: var(--green); font-weight: 700; }
+    .diagram .lvl { font-size: 11px; fill: var(--green-dim); font-weight: 700; }
+    .diagram .level path { stroke: rgba(201, 209, 217, 0.13); stroke-width: 1; stroke-dasharray: 2 5; fill: none; }
+    .diagram .edge { stroke: var(--hair); stroke-width: 1.6; fill: none; }
+    .diagram .edge-g { stroke: var(--green); stroke-width: 1.8; fill: none; }
+    .diagram .nd { fill: var(--bg-lift); stroke: var(--mute); stroke-width: 1.4; }
+    .diagram .nd-g { fill: rgba(57, 211, 83, 0.14); stroke: var(--green); stroke-width: 1.6; }
+    .diagram .leaf { fill: rgba(201, 209, 217, 0.1); stroke: var(--hair); stroke-width: 1.2; }
+    .diagram .zone { fill: rgba(227, 179, 65, 0.07); stroke: var(--amber); stroke-width: 1.4; stroke-dasharray: 5 4; }
+    .diagram .stub { fill: rgba(248, 81, 73, 0.08); stroke: var(--red); stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .diagram .file { fill: rgba(57, 211, 83, 0.07); stroke: var(--green-dim); stroke-width: 1.5; }
+    .diagram .flow { stroke: var(--amber); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    .diagram .dash-anim { stroke-dasharray: 6 5; animation: march 1.6s linear infinite; }
+    @keyframes march { to { stroke-dashoffset: -22; } }
+
+    /* === CALLOUT (the speech beat) ============================ */
+    .callout {
+        border-left: 3px solid var(--amber);
+        background: rgba(227, 179, 65, 0.07);
+        padding: clamp(0.6rem, 1.6vw, 1.3rem) clamp(0.7rem, 1.8vw, 1.6rem);
+        font-size: clamp(0.85rem, 2vw, 1.5rem);
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--text-hi);
+        max-width: 60ch;
+    }
+    .callout b { color: var(--amber); }
+
+    /* === FIGURE SLOT ==========================================
+       Image-ready: drop <img src="assets/foo.png" alt="..."> inside
+       any .figure and the dashed placeholder hides itself. Images are
+       capped by the base rules (max-height: min(50vh, 400px)).
+       ========================================================== */
+    .figure { display: flex; flex-direction: column; gap: var(--element-gap); align-items: flex-start; width: 100%; }
+    .figure img {
+        max-height: min(50vh, 400px);
+        max-width: 100%;
+        border: 1px solid var(--hair);
+        background: var(--bg-lift);
+    }
+    .figure-slot {
+        width: min(88vw, 900px);
+        height: min(42vh, 340px);
+        border: 1.5px dashed var(--green-dim);
+        background:
+            repeating-linear-gradient(135deg, rgba(57, 211, 83, 0.05) 0 10px, transparent 10px 20px),
+            rgba(22, 27, 34, 0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--element-gap);
+        text-align: center;
+        padding: var(--element-gap);
+    }
+    .figure-slot .slot-title { font-size: var(--h3-size); color: var(--green); font-weight: 700; }
+    .figure-slot .slot-hint { font-size: var(--small-size); color: var(--mute); max-width: 52ch; line-height: 1.5; }
+    .figure:has(img) .figure-slot { display: none; }
+    figcaption { font-size: var(--small-size); color: var(--mute); }
+
+    /* === PROGRESS BAR + NAV DOTS ============================== */
+    .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0;
+        background: linear-gradient(90deg, var(--green-dim), var(--green));
+        box-shadow: 0 0 10px rgba(57, 211, 83, 0.6);
+        z-index: 9000;
+        transition: width 0.35s var(--ease);
+    }
+    .nav-dots {
+        position: fixed;
+        right: clamp(6px, 1.2vw, 16px);
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: clamp(4px, 0.7vh, 8px);
+        z-index: 9000;
+    }
+    .nav-dots button {
+        width: clamp(6px, 0.7vw, 9px);
+        height: clamp(6px, 0.7vw, 9px);
+        border: 1px solid var(--green-dim);
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        transition: background 0.25s, transform 0.25s;
+    }
+    .nav-dots button:hover { background: rgba(57, 211, 83, 0.4); }
+    .nav-dots button.active { background: var(--green); transform: scale(1.35); }
+
+    .keyboard-hint {
+        position: fixed;
+        bottom: clamp(6px, 1.4vh, 14px);
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: var(--small-size);
+        color: var(--mute);
+        opacity: 0.65;
+        z-index: 8000;
+        pointer-events: none;
+        transition: opacity 0.5s;
+    }
+    .keyboard-hint.gone { opacity: 0; }
+
+    /* === ENTRANCE ANIMATIONS =================================
+       .reveal elements fade+rise when their slide becomes visible.
+       Stagger via --i (set per element) so order is explicit.
+       ========================================================= */
+    .reveal {
+        opacity: 0;
+        transform: translateY(22px);
+        transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+        transition-delay: calc(var(--i, 0) * 0.09s);
+    }
+    .slide.visible .reveal { opacity: 1; transform: none; }
+
+    .reveal-rule { transform: scaleX(0); transition: transform 0.8s var(--ease); transition-delay: calc(var(--i, 0) * 0.09s); }
+    .slide.visible .reveal-rule { transform: scaleX(1); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal { opacity: 1; transform: none; }
+        .reveal-rule { transform: none; }
+        .statemap i.hot, .cursor, .dash-anim { animation: none; }
+        .bar > i { transform: scaleX(1); }
+    }
+
+    /* === INLINE EDITING ======================================
+       Visibility is driven by JS classes only (a CSS `~` selector
+       breaks: pointer-events:none kills the hover chain).
+       ========================================================= */
+    .edit-hotzone {
+        position: fixed;
+        top: 0; left: 0;
+        width: 80px; height: 80px;
+        z-index: 10000;
+        cursor: pointer;
+    }
+    .edit-toggle {
+        position: fixed;
+        top: clamp(8px, 1.4vw, 18px);
+        left: clamp(8px, 1.4vw, 18px);
+        width: clamp(30px, 3vw, 40px);
+        height: clamp(30px, 3vw, 40px);
+        border: 1px solid var(--green-dim);
+        background: rgba(13, 17, 23, 0.9);
+        color: var(--green);
+        font-family: var(--font);
+        font-size: clamp(0.7rem, 1.4vw, 1rem);
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, box-shadow 0.3s ease;
+        z-index: 10001;
+    }
+    .edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+    .edit-toggle.active { background: var(--green); color: #04140a; box-shadow: 0 0 14px rgba(57, 211, 83, 0.5); }
+
+    body.editing [contenteditable="true"] { outline: 1px dashed rgba(57, 211, 83, 0.45); outline-offset: 3px; cursor: text; }
+    body.editing [contenteditable="true"]:focus { outline: 1px solid var(--green); background: rgba(57, 211, 83, 0.06); }
+
+    .toast {
+        position: fixed;
+        bottom: clamp(10px, 2vh, 22px);
+        right: clamp(10px, 2vw, 22px);
+        border: 1px solid var(--green-dim);
+        background: rgba(13, 17, 23, 0.95);
+        color: var(--green);
+        font-size: var(--small-size);
+        letter-spacing: 0.08em;
+        padding: 0.5em 0.9em;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.3s, transform 0.3s;
+        z-index: 10002;
+        pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    </style>
+</head>
+<body>
+    <!-- Progress + navigation chrome (populated by JS) -->
+    <div class="progress-bar" id="progressBar"></div>
+    <nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+    <div class="keyboard-hint" id="kbHint">← → / space to navigate · E to edit</div>
+
+    <!-- Inline editing controls -->
+    <div class="edit-hotzone" title="Edit mode"></div>
+    <button class="edit-toggle" id="editToggle" title="Edit mode (E)">✎</button>
+    <div class="toast" id="toast"></div>
+
+<!-- =============================================================
+     SLIDE 01 — TITLE
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span>~/talks/state-archival <span class="prompt-sym">$</span> present</span>
+        <span class="counter">01<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">&gt; geth archive generate <b>--hoodi</b></div>
+        <h1 class="reveal" style="--i:1">State <em>Archival</em><span class="cursor"></span></h1>
+        <hr class="rule reveal-rule" style="--i:2">
+        <p class="lede reveal" style="--i:3">Most of the state is dead weight. Move it out of the database, keep the state root identical, and let the trie resurrect it on demand.</p>
+        <div class="tags reveal" style="--i:4">
+            <span class="tag">go-ethereum #33906</span>
+            <span class="tag amber">NO HARD FORK</span>
+            <span class="tag plain">Guillaume Ballet</span>
+        </div>
+    </div>
+    <div class="stamp">Terminal Ledger</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 02 — THE PROBLEM: the DB punishes growth
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> du -sh chaindata</span>
+        <span class="counter">02<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">the problem</div>
+        <h2 class="reveal" style="--i:1">The database gets <s>slower</s> as it gets fuller</h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>Every block re-hashes each dirty path to the root and persists the nodes it touched</span></li>
+            <li><span>Those writes land <b class="a">scattered</b> across a keyspace that is mostly cold</span></li>
+            <li><span>LSM compaction and page copy-on-write then rewrite far more bytes than the block changed</span></li>
+            <li><span>So per-block cost tracks <b class="r">total state size</b>, not the size of the change</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">Scale, early 2026: ~360M accounts, ~1.5B storage slots (figures from EIP-8188's rationale).</p>
+    </div>
+    <div class="stamp">01 · Problem</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 03 — THE OBSERVATION: hero stat, 3%/month
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> measure --touched-per-month</span>
+        <span class="counter">03<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">the observation</div>
+        <h2 class="reveal" style="--i:1">But almost nothing moves</h2>
+        <div class="hero-stat reveal" style="--i:2">
+            <span class="num">3%</span>
+            <span class="unit">of the state is touched<br>in a given month</span>
+        </div>
+        <div class="statemap reveal decorative" style="--i:3" id="stateMap" aria-hidden="true"></div>
+        <p class="note reveal" style="--i:4">The other <b class="g">97%</b> is paying rent in the hot path and never showing up for work. Measurement ongoing — treat the exact figure as provisional.</p>
+    </div>
+    <div class="stamp">01 · Problem</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 04 — PRECEDENT: history expiry did this already
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> git log --grep 'history expiry'</span>
+        <span class="counter">04<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">precedent</div>
+        <h2 class="reveal" style="--i:1">We already solved this shape of problem</h2>
+        <div class="cols reveal" style="--i:2">
+            <div class="col">
+                <h3>THEN · history</h3>
+                <ul class="bullet-list tight">
+                    <li><span>Block count and size outgrew the database</span></li>
+                    <li><span>Old blocks were moved to an <b>archive</b> outside the DB</span></li>
+                    <li><span>Rarely read, so the trade was obvious</span></li>
+                </ul>
+            </div>
+            <div class="col now">
+                <h3>NOW · state</h3>
+                <ul class="bullet-list tight">
+                    <li><span>Same growth curve, same DB pressure</span></li>
+                    <li><span>Cold state moves to an <b>archive file</b>, hot state stays</span></li>
+                    <li><span>Bonus: an unused subtree can be dropped entirely and rebuilt from its leaves</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="stamp">02 · Idea</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 05 — THE IDEA
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> cat trie/archiver.go</span>
+        <span class="counter">05<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">the idea</div>
+        <h2 class="reveal" style="--i:1">Expire the subtree, <em>keep the leaves</em></h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>Walk the trie and pick subtrees at <b class="g">height 3</b> — height counted from the leaves, so leaves are 0</span></li>
+            <li><span>Append their leaf records to one flat file: <b>&lt;datadir&gt;/geth/nodearchive</b></span></li>
+            <li><span>Delete every node of that subtree from the DB, leave a stub holding <b>offset + size</b></span></li>
+            <li><span>Keep the subtree root hash, so the state root <b class="g">does not change</b></span></li>
+            <li><span>Need it again? Read the leaves back and re-hash 3 levels on the fly</span></li>
+        </ul>
+    </div>
+    <div class="stamp">02 · Idea</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 06 — DIAGRAM: the swap
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> archive generate --dry-run</span>
+        <span class="counter">06<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">What the swap looks like</h2>
+        <figure class="figure reveal" style="--i:1">
+            <!-- CSS/SVG diagram: height-3 subtree lifted out of the DB into the archive file.
+                 To replace with a bitmap later, add <img src="assets/swap.png" alt="..."> here;
+                 the .figure:has(img) rule hides this SVG's placeholder sibling automatically. -->
+            <svg class="diagram" viewBox="0 0 760 250" role="img" aria-label="A height-3 subtree, four levels deep, is removed from the database and written to the archive file. Its parent keeps the subtree root hash and points at a stub node holding an offset and a size.">
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
+                    </marker>
+                </defs>
+
+                <!-- BEFORE: the subtree as it lives in the DB, with a height scale
+                     measured from the leaves (leaves = 0), matching archiver.go. -->
+                <text class="lbl" x="10" y="18">BEFORE · all in the DB</text>
+                <g class="level">
+                    <path d="M34 64 H300 M34 112 H300 M34 160 H300 M34 211 H300"></path>
+                    <text class="lvl" x="8" y="68">h3</text>
+                    <text class="lvl" x="8" y="116">h2</text>
+                    <text class="lvl" x="8" y="164">h1</text>
+                    <text class="lvl" x="8" y="215">h0</text>
+                </g>
+                <rect class="zone" x="78" y="44" width="180" height="182" rx="4"></rect>
+                <path class="edge dash-anim" d="M170 24 L170 52"></path>
+                <text class="lbl" x="182" y="32">from the root</text>
+                <path class="edge-g" d="M170 75 L128 103 M170 75 L212 103"></path>
+                <path class="edge" d="M128 121 L106 152 M128 121 L150 152 M212 121 L192 152 M212 121 L234 152"></path>
+                <path class="edge" d="M106 167 V202 M150 167 V202 M192 167 V202 M234 167 V202"></path>
+                <circle class="nd-g" cx="170" cy="64" r="11"></circle>
+                <circle class="nd-g" cx="128" cy="112" r="9"></circle>
+                <circle class="nd-g" cx="212" cy="112" r="9"></circle>
+                <circle class="nd" cx="106" cy="160" r="7"></circle>
+                <circle class="nd" cx="150" cy="160" r="7"></circle>
+                <circle class="nd" cx="192" cy="160" r="7"></circle>
+                <circle class="nd" cx="234" cy="160" r="7"></circle>
+                <rect class="leaf" x="99" y="204" width="14" height="14"></rect>
+                <rect class="leaf" x="143" y="204" width="14" height="14"></rect>
+                <rect class="leaf" x="185" y="204" width="14" height="14"></rect>
+                <rect class="leaf" x="227" y="204" width="14" height="14"></rect>
+                <text class="lbl-g" x="168" y="242" text-anchor="middle">one height-3 subtree</text>
+
+                <!-- FLOW -->
+                <path class="flow dash-anim" d="M302 130 L372 130"></path>
+                <text class="lbl" x="337" y="118" text-anchor="middle">archive</text>
+
+                <!-- AFTER: parent keeps the hash, child becomes a 17-byte stub -->
+                <text class="lbl" x="392" y="18">AFTER · stub + flat file</text>
+                <text class="lbl" x="450" y="46" text-anchor="middle">parent keeps the hash</text>
+                <path class="edge dash-anim" d="M450 24 L450 52"></path>
+                <circle class="nd" cx="450" cy="70" r="11"></circle>
+                <path class="edge-g" d="M461 78 L520 100"></path>
+                <rect class="stub" x="508" y="84" width="176" height="44" rx="3"></rect>
+                <text class="lbl" x="595" y="103" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <text class="lbl" x="596" y="119" text-anchor="middle">offset + size · 17 B</text>
+                <path class="flow" d="M595 132 L595 162"></path>
+                <rect class="file" x="505" y="166" width="190" height="62" rx="3"></rect>
+                <text class="lbl-g" x="600" y="186" text-anchor="middle">geth/nodearchive</text>
+                <path class="edge-g" d="M520 200 H680 M520 210 H655 M520 220 H672"></path>
+                <text class="lbl" x="600" y="244" text-anchor="middle">leaf records, appended</text>
+            </svg>
+            <figcaption>Height is counted from the leaves: leaves are 0, so a height-3 node has four levels under its own hash. The DB keeps that hash; everything below it becomes bytes in one append-only file.</figcaption>
+        </figure>
+    </div>
+    <div class="stamp">02 · Idea</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 07 — CODE: the stub is 17 bytes
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> cat trie/expired_node.go</span>
+        <span class="counter">07<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">The replacement is <em>17 bytes</em></h2>
+        <div class="code reveal" style="--i:1">
+<pre><span class="c">// Valid MPT nodes are always RLP lists (0xc0+),</span>
+<span class="c">// so 0x00 is a free, unambiguous marker byte.</span>
+<span class="k">const</span> expiredNodeMarker = <span class="s">0x00</span>
+
+<span class="k">type</span> <span class="t">expiredNode</span> <span class="k">struct</span> {
+    offset          <span class="t">uint64</span> <span class="c">// where the leaves live</span>
+    size            <span class="t">uint64</span> <span class="c">// how many bytes to read</span>
+    cachedHash      <span class="t">hashNode</span> <span class="c">// subtree root: consensus unchanged</span>
+    archiveResolver archive.<span class="t">ResolverFn</span>
+}</pre>
+        </div>
+        <p class="code-caption reveal" style="--i:2">On disk: <b class="g">1</b> marker byte + <b class="g">8</b> offset + <b class="g">8</b> size. A whole subtree collapses to that.</p>
+    </div>
+    <div class="stamp">03 · Mechanism</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 08 — RESURRECTION
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> archive verify --hoodi</span>
+        <span class="counter">08<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">resurrection</div>
+        <h2 class="reveal" style="--i:1">Reading a cold node is just <em>hashing</em></h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>Resolver reads the records at <b>(offset, size)</b> — one seek into a flat file</span></li>
+            <li><span>Leaves are re-inserted, the subtree is rebuilt, hashes recomputed bottom-up</span></li>
+            <li><span>The result is checked against the stored subtree root: <b class="g">no trust required</b></span></li>
+            <li><span><b>geth archive verify</b> does this for every archived node, accounts and storage</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">Hashing work grows exponentially with subtree height. Height 3 rebuilds in negligible time; go deeper and the resurrection cost is what bites you. That's the whole reason the knob exists.</p>
+    </div>
+    <div class="stamp">03 · Mechanism</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 09 — WHY IT IS FASTER
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> perf stat -- geth import</span>
+        <span class="counter">09<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">the counterintuitive part</div>
+        <h2 class="reveal" style="--i:1">A flat file <em>beats</em> a database</h2>
+        <div class="cols reveal" style="--i:2">
+            <div class="col now">
+                <h3>CHEAPER</h3>
+                <ul class="bullet-list tight">
+                    <li><span>One seek at a known offset — no index descent, no page cache miss</span></li>
+                    <li><span>Fewer live nodes → smaller working set, less compaction</span></li>
+                </ul>
+            </div>
+            <div class="col">
+                <h3>PRICIER</h3>
+                <ul class="bullet-list tight cost">
+                    <li><span>Writes must rebuild before they can mutate</span></li>
+                    <li><span>Extra hashing on the commit path</span></li>
+                    <li><span>…both dwarfed by the I/O they replace</span></li>
+                </ul>
+            </div>
+        </div>
+        <p class="note reveal" style="--i:3">The trie stops paying for generality it never uses on cold data.</p>
+    </div>
+    <div class="stamp">03 · Mechanism</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 10 — THE CLI
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> geth archive --help</span>
+        <span class="counter">10<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">One command, four subcommands</h2>
+        <div class="code reveal" style="--i:1">
+<pre><span class="s">$</span> geth archive generate <span class="f">--hoodi</span>        <span class="c"># walk trie, archive height-3 subtrees</span>
+<span class="s">$</span> geth archive verify <span class="f">--hoodi</span>          <span class="c"># resurrect everything, compare hashes</span>
+<span class="s">$</span> geth archive check-node <span class="f">--owner</span> <span class="t">H</span> <span class="f">--path</span> <span class="t">N</span>
+<span class="s">$</span> geth archive delete-journal <span class="f">--hoodi</span>  <span class="c"># drop pathdb journal after generate</span>
+
+<span class="c"># knobs: --output, --compaction-interval 1000, --dry-run</span></pre>
+        </div>
+        <p class="code-caption reveal" style="--i:2">Reads nodes straight from the persistent disk layer, bypassing in-memory diff layers, so what it archives is what is actually on disk.</p>
+    </div>
+    <div class="stamp">04 · Results</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 11 — NUMBERS: Hoodi headline
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> geth import --hoodi   <span style="color:#6e7681">x2</span></span>
+        <span class="counter">11<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">hoodi · 1,198,413 blocks imported twice</div>
+        <h2 class="reveal" style="--i:1">Baseline vs archival</h2>
+        <div class="stats three reveal" style="--i:2">
+            <div class="stat hot">
+                <div class="label">Total import time</div>
+                <div class="value">32h 00m</div>
+                <div class="delta up">−17.5% vs 38h 47m</div>
+            </div>
+            <div class="stat hot">
+                <div class="label">Throughput</div>
+                <div class="value">320.9 <span style="font-size:0.5em">Mgas/s</span></div>
+                <div class="delta up">+21.3% vs 264.5</div>
+            </div>
+            <div class="stat">
+                <div class="label">Chaindata</div>
+                <div class="value">86 GB</div>
+                <div class="delta down">+2 GB vs 84 GB</div>
+            </div>
+            <div class="stat">
+                <div class="label">Archive file</div>
+                <div class="value">2.1 MB</div>
+                <div class="delta down">one flat file</div>
+            </div>
+            <div class="stat">
+                <div class="label">Generate, once</div>
+                <div class="value">53 min</div>
+                <div class="delta down">repaid 7.7×</div>
+            </div>
+            <div class="stat">
+                <div class="label">Resurrections</div>
+                <div class="value">4,111</div>
+                <div class="delta up">all resolved</div>
+            </div>
+        </div>
+        <p class="note reveal" style="--i:3">Hetzner dedicated, 12 cores / 22 GB / SSD. Blocks 1,217,349 → 2,415,761 replayed on identical snapshots.</p>
+    </div>
+    <div class="stamp">04 · Results</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 12 — CHART: throughput per block range
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> awk '/Mgas/' import.log</span>
+        <span class="counter">12<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">Faster in <em>every</em> range, not on average</h2>
+        <!-- Bars scaled against a 380 Mgas/s ceiling: width = value / 380.
+             Baseline sits above archival in each row so both are readable. -->
+        <div class="chart reveal" style="--i:1">
+            <div class="bar-row">
+                <span class="bar-label">1.30M–1.39M</span>
+                <div class="bar-track">
+                    <div class="bar base"><i style="width:64.2%"></i></div>
+                    <div class="bar arch"><i style="width:77.9%"></i></div>
+                </div>
+                <span class="bar-figs">244 → <b>296</b> <em>+21%</em></span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">1.40M–1.47M</span>
+                <div class="bar-track">
+                    <div class="bar base"><i style="width:63.9%"></i></div>
+                    <div class="bar arch"><i style="width:78.9%"></i></div>
+                </div>
+                <span class="bar-figs">243 → <b>300</b> <em>+24%</em></span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">1.50M–1.59M</span>
+                <div class="bar-track">
+                    <div class="bar base"><i style="width:61.6%"></i></div>
+                    <div class="bar arch"><i style="width:76.8%"></i></div>
+                </div>
+                <span class="bar-figs">234 → <b>292</b> <em>+25%</em></span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">1.70M–1.79M</span>
+                <div class="bar-track">
+                    <div class="bar base"><i style="width:72.9%"></i></div>
+                    <div class="bar arch"><i style="width:90.5%"></i></div>
+                </div>
+                <span class="bar-figs">277 → <b>344</b> <em>+24%</em></span>
+            </div>
+            <div class="bar-row">
+                <span class="bar-label">2.00M–2.09M</span>
+                <div class="bar-track">
+                    <div class="bar base"><i style="width:75.5%"></i></div>
+                    <div class="bar arch"><i style="width:91.1%"></i></div>
+                </div>
+                <span class="bar-figs">287 → <b>346</b> <em>+21%</em></span>
+            </div>
+        </div>
+        <div class="legend reveal" style="--i:2">
+            <span><i class="base"></i>baseline</span>
+            <span><i class="arch"></i>archival · Mgas/s</span>
+            <span>spread across all ranges: <b class="g">+17% … +25%</b></span>
+        </div>
+    </div>
+    <div class="stamp">04 · Results</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 13 — RESERVED FIGURE SLOT (data collection in progress)
+     Drop the chart in as:
+       <img src="assets/state-archival-perf.png" alt="...">
+     inside the .figure below — the dashed placeholder hides itself.
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> ./collect-metrics.sh <span style="color:#e3b341">--running</span></span>
+        <span class="counter">13<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">Fresh numbers, landing before the talk</h2>
+        <figure class="figure reveal" style="--i:1">
+            <div class="figure-slot">
+                <div class="slot-title">FIGURE SLOT · reserved</div>
+                <p class="slot-hint">Benchmark run in progress. Drop the plot in as <b class="g">assets/state-archival-perf.png</b> and this placeholder disappears — no other edit needed, sizing is already capped to the viewport.</p>
+            </div>
+            <figcaption>Read latency, write latency and DB size over time — baseline vs archival.</figcaption>
+        </figure>
+    </div>
+    <div class="stamp">04 · Results</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 14 — WHAT IT COSTS
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> echo $COSTS</span>
+        <span class="counter">14<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">honest ledger</div>
+        <h2 class="reveal" style="--i:1">What it costs</h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list cost reveal" style="--i:3">
+            <li><span><b class="r">+2 GB</b> chaindata in the benchmark — the archive itself is 2.1 MB, the rest is layout churn</span></li>
+            <li><span>A <b class="r">53-minute</b> offline pass before the win starts</span></li>
+            <li><span>The pathdb journal must be dropped afterwards, or in-memory layers disagree with disk</span></li>
+            <li><span>Height is a real trade: deeper subtrees archive more, resurrect slower</span></li>
+            <li><span>Naming is already contested — review suggests <b>geth trie compress</b>, since this is offline compression, not "archive mode"</span></li>
+        </ul>
+    </div>
+    <div class="stamp">05 · Argument</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 15 — THE SPEECH: change outside the protocol
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> whoami --no-fork-required</span>
+        <span class="counter">15<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">the actual point</div>
+        <h2 class="reveal" style="--i:1">This lives <em>outside</em> the protocol</h2>
+        <div class="callout reveal" style="--i:2">Same state root. Same blocks. Same consensus. <b>Nothing to negotiate.</b></div>
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>No EIP, no fork window, no cross-client coordination</span></li>
+            <li><span>Opt-in per node, and reversible: <b>verify</b>, then walk it back if you don't like it</span></li>
+            <li><span>Iterate at client speed instead of fork cadence</span></li>
+            <li><span>Measure on a real chain first; only ask for protocol changes you have data for</span></li>
+        </ul>
+    </div>
+    <div class="stamp">05 · Argument</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 16 — WHERE THE PROTOCOL HELPS: EIP-8188
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> open eips.ethereum.org/EIPS/eip-8188</span>
+        <span class="counter">16<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">better together</div>
+        <h2 class="reveal" style="--i:1">Where the protocol <em>does</em> help</h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span><b>EIP-8188</b> records <b class="g">last_written_block</b> on every account and slot</span></li>
+            <li><span>A consensus-verified write age: every client picks the same cold set, instead of guessing from local caches</span></li>
+            <li><span>Reads never bump it — otherwise a read becomes a write and STATICCALL breaks</span></li>
+            <li><span>Cost: 5 bytes per account, 6 per slot — ~10.8 GB worst case, and that buys targeted archival</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">Client-side archival works today on heuristics; write-age metadata turns it from a guess into a decision.</p>
+    </div>
+    <div class="stamp">05 · Argument</div>
+</section>
+
+<!-- =============================================================
+     SLIDE 17 — CLOSE
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span>~/talks/state-archival <span class="prompt-sym">$</span> exit</span>
+        <span class="counter">17<i> / 17</i></span>
+    </div>
+    <div class="slide-content">
+        <h1 class="reveal" style="--i:0">Move the cold<br>state <em>out</em><span class="cursor"></span></h1>
+        <hr class="rule reveal-rule" style="--i:1">
+        <ul class="bullet-list reveal" style="--i:2">
+            <li><span>3% moves per month — stop making the other 97% part of the hot path</span></li>
+            <li><span>Height-3 subtrees to a flat file: <b class="g">−17.5%</b> import time, <b class="g">+21%</b> throughput</span></li>
+            <li><span>No fork needed to try it. A fork would only make it sharper</span></li>
+        </ul>
+        <div class="tags reveal" style="--i:3">
+            <span class="tag">github.com/ethereum/go-ethereum/pull/33906</span>
+            <span class="tag amber">EIP-8188</span>
+            <span class="tag plain">@gballet</span>
+        </div>
+    </div>
+    <div class="stamp">Thanks · questions</div>
+</section>
+
+<script>
+/* ===============================================================
+   SLIDE PRESENTATION CONTROLLER
+   Keyboard + touch + dots + progress + reveal-on-visible.
+   Wheel/trackpad scrolling is left to native CSS scroll-snap:
+   hijacking it fights the browser and feels worse.
+   =============================================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.current = 0;
+        this.progress = document.getElementById('progressBar');
+        this.dotsWrap = document.getElementById('navDots');
+        this.hint = document.getElementById('kbHint');
+
+        this.buildStateMap();
+        this.setupNavDots();
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.updateChrome(0);
+    }
+
+    /* --- Slide 03 decoration: 100 cells, 3 of them hot ---------- */
+    buildStateMap() {
+        const map = document.getElementById('stateMap');
+        if (!map) return;
+        const hot = new Set([17, 43, 76]);           /* ~3 of 100 */
+        let cells = '';
+        for (let i = 0; i < 100; i++) {
+            cells += hot.has(i) ? '<i class="hot"></i>' : '<i></i>';
+        }
+        map.innerHTML = cells;
+    }
+
+    /* --- Reveal animations + current-slide tracking -------------- */
+    setupIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('visible');
+                const index = this.slides.indexOf(entry.target);
+                if (index !== -1) {
+                    this.current = index;
+                    this.updateChrome(index);
+                }
+            });
+        }, { threshold: 0.55 });
+        this.slides.forEach((slide) => observer.observe(slide));
+    }
+
+    updateChrome(index) {
+        const pct = ((index + 1) / this.slides.length) * 100;
+        this.progress.style.width = pct + '%';
+        Array.from(this.dotsWrap.children).forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        if (index > 0 && this.hint) this.hint.classList.add('gone');
+    }
+
+    setupNavDots() {
+        this.slides.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+            dot.addEventListener('click', () => this.goTo(i));
+            this.dotsWrap.appendChild(dot);
+        });
+    }
+
+    goTo(index) {
+        const clamped = Math.max(0, Math.min(this.slides.length - 1, index));
+        this.slides[clamped].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        this.current = clamped;
+    }
+
+    next() { this.goTo(this.current + 1); }
+    prev() { this.goTo(this.current - 1); }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            /* never steal keys while editing text */
+            if (e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true') return;
+            switch (e.key) {
+                case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
+                    e.preventDefault(); this.next(); break;
+                case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+                    e.preventDefault(); this.prev(); break;
+                case 'Home':
+                    e.preventDefault(); this.goTo(0); break;
+                case 'End':
+                    e.preventDefault(); this.goTo(this.slides.length - 1); break;
+            }
+        });
+    }
+
+    setupTouchNav() {
+        let startY = 0, startX = 0, startT = 0;
+        document.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            startX = e.touches[0].clientX;
+            startT = Date.now();
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (document.body.classList.contains('editing')) return;
+            const dy = e.changedTouches[0].clientY - startY;
+            const dx = e.changedTouches[0].clientX - startX;
+            if (Date.now() - startT > 800) return;
+            if (Math.abs(dy) < 55 || Math.abs(dx) > Math.abs(dy)) return;
+            dy < 0 ? this.next() : this.prev();
+        }, { passive: true });
+    }
+}
+
+/* ===============================================================
+   INLINE EDITOR
+   Click-to-edit text, autosave to localStorage, Ctrl+S exports a
+   standalone copy of the deck with the edits baked in.
+   =============================================================== */
+class InlineEditor {
+    constructor() {
+        this.isActive = false;
+        this.storeKey = 'state-archival-deck-edits';
+        this.toastEl = document.getElementById('toast');
+        this.toggleBtn = document.getElementById('editToggle');
+
+        /* Stable index-based keys: element order never changes at runtime. */
+        this.targets = Array.from(document.querySelectorAll(
+            '.slide h1, .slide h2, .slide h3, .slide p, .slide li span, .slide .tag, ' +
+            '.slide .kicker, .slide figcaption, .slide .stat .label, .slide .stat .value, ' +
+            '.slide .stat .delta, .slide .callout, .slide .stamp, .slide .bar-label, ' +
+            '.slide .bar-figs, .slide .slot-title'
+        ));
+        this.targets.forEach((el, i) => { el.dataset.ed = 'e' + i; });
+
+        this.restore();
+        this.wire();
+    }
+
+    restore() {
+        let saved;
+        try { saved = JSON.parse(localStorage.getItem(this.storeKey) || '{}'); }
+        catch (_) { saved = {}; }
+        let count = 0;
+        this.targets.forEach((el) => {
+            const v = saved[el.dataset.ed];
+            if (typeof v === 'string' && v !== el.innerHTML) { el.innerHTML = v; count++; }
+        });
+        if (count) this.toast(count + ' saved edit(s) restored');
+    }
+
+    save() {
+        const data = {};
+        this.targets.forEach((el) => { data[el.dataset.ed] = el.innerHTML; });
+        try { localStorage.setItem(this.storeKey, JSON.stringify(data)); }
+        catch (_) { this.toast('localStorage full — export instead'); }
+    }
+
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle('editing', this.isActive);
+        this.toggleBtn.classList.toggle('active', this.isActive);
+        this.targets.forEach((el) => {
+            if (this.isActive) {
+                el.setAttribute('contenteditable', 'true');
+                el.spellcheck = false;
+            } else {
+                el.removeAttribute('contenteditable');
+            }
+        });
+        this.toast(this.isActive ? 'EDIT MODE · ctrl+S exports' : 'edit mode off · saved');
+        if (!this.isActive) this.save();
+    }
+
+    /* Export the live DOM as a clean, standalone HTML file. */
+    export() {
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+        clone.querySelectorAll('.edit-toggle').forEach((el) => el.classList.remove('active', 'show'));
+        const body = clone.querySelector('body');
+        if (body) body.classList.remove('editing');
+        const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+        const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'state-archival.html';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.toast('exported state-archival.html');
+    }
+
+    toast(msg) {
+        if (!this.toastEl) return;
+        this.toastEl.textContent = msg;
+        this.toastEl.classList.add('show');
+        clearTimeout(this._t);
+        this._t = setTimeout(() => this.toastEl.classList.remove('show'), 2200);
+    }
+
+    wire() {
+        /* autosave on typing (debounced) */
+        document.addEventListener('input', (e) => {
+            if (!this.isActive || !e.target.dataset || !e.target.dataset.ed) return;
+            clearTimeout(this._s);
+            this._s = setTimeout(() => this.save(), 400);
+        });
+        /* Ctrl/Cmd+S exports; Escape leaves edit mode */
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                this.save();
+                this.export();
+            }
+            if (e.key === 'Escape' && this.isActive) this.toggleEditMode();
+        });
+    }
+}
+
+/* ===============================================================
+   BOOTSTRAP + EDIT-TOGGLE INTERACTIONS
+   Hover reveal needs a JS grace period: pointer-events:none on the
+   button breaks any CSS-only hover chain.
+   =============================================================== */
+const deck = new SlidePresentation();
+const editor = new InlineEditor();
+
+const hotzone = document.querySelector('.edit-hotzone');
+const editToggle = document.getElementById('editToggle');
+let hideTimeout = null;
+
+const showToggle = () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); };
+const scheduleHide = () => {
+    hideTimeout = setTimeout(() => {
+        if (!editor.isActive) editToggle.classList.remove('show');
+    }, 400);
+};
+
+hotzone.addEventListener('mouseenter', showToggle);
+hotzone.addEventListener('mouseleave', scheduleHide);
+editToggle.addEventListener('mouseenter', showToggle);
+editToggle.addEventListener('mouseleave', scheduleHide);
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+editToggle.addEventListener('click', () => editor.toggleEditMode());
+
+/* E toggles edit mode, unless the caret is already in a text node */
+document.addEventListener('keydown', (e) => {
+    if ((e.key === 'e' || e.key === 'E') && !(e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true')) {
+        editor.toggleEditMode();
+    }
+});
+</script>
+</body>
+</html>
