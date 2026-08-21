@@ -717,7 +717,6 @@ layout: null
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">&gt; geth archive generate <b>--hoodi</b></div>
         <h1 class="reveal" style="--i:1">State <em>Archival</em><span class="cursor"></span></h1>
         <hr class="rule reveal-rule" style="--i:2">
         <p class="lede reveal" style="--i:3">Most of the state is dead weight. Move it out of the database, keep the state root identical, and let the trie resurrect it on demand.</p>
@@ -882,7 +881,7 @@ layout: null
     archiveResolver archive.<span class="t">ResolverFn</span>
 }</pre>
         </div>
-        <p class="code-caption reveal" style="--i:2">On disk: <b class="g">1</b> marker byte + <b class="g">8</b> offset + <b class="g">8</b> size. A whole subtree collapses to that.</p>
+        <p class="code-caption reveal" style="--i:2">In db: <b class="g">1</b> marker byte + <b class="g">8</b> offset + <b class="g">8</b> size. A whole subtree collapses to that.</p>
     </div>
     <div class="stamp">03 · Method</div>
 </section>
@@ -1208,9 +1207,8 @@ layout: null
         <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
         <div class="callout reveal" style="--i:2">Same state root. Same blocks. Same consensus. <b>Nothing to negotiate.</b></div>
         <ul class="bullet-list reveal" style="--i:3">
-            <li><span>One client, one flag, one node's disk — no fork window, no cross-client rollout</span></li>
-            <li><span>Reversible: run <b>verify</b>, then walk it back if it disappoints</span></li>
-            <li><span>Failure stays local. A bad client-side call costs a resync, not a chain split</span></li>
+            <li><span>ACD tries to estimate the impact of a change before implementing it - this is a long and error-prone process</span></li>
+            <li><span>Out-of-protocol: no fork window, no cross-client rollout</span></li>
             <li><span>The measurement comes first, and the EIP comes later with data already attached</span></li>
             <li><span>Consensus is the tool of last resort — for what genuinely needs it, like 8188's metadata</span></li>
         </ul>
@@ -1226,7 +1224,7 @@ layout: null
      ============================================================= -->
 <section class="slide plate">
     <div class="slide-content">
-        <h2 class="reveal" style="--i:0">Meanwhile, the roadmap</h2>
+        <h2 class="reveal" style="--i:0">Meanwhile, the strawmap</h2>
         <figure class="figure wide reveal" style="--i:1">
             <img src="assets/strawmap.png" alt="The Ethereum L1 strawmap: three swimlanes for consensus, data and execution layers, with dozens of linked boxes spread across columns from 2026 through longer term and north stars.">
             <figcaption>strawmap.org — EF Architecture's draft L1 roadmap, updated Aug 20 2026. Three layers, columns from Glamsterdam out to "north stars".</figcaption>
@@ -1263,7 +1261,7 @@ layout: null
             <li><span>3% moves per month — stop making the other 97% part of the hot path</span></li>
             <li><span>Height-3 subtrees to a flat file: <b class="g">−17.5%</b> import time, <b class="g">+21%</b> throughput</span></li>
             <li><span>Delete the file and it becomes expiry; add 8188 and it stops guessing</span></li>
-            <li><span>None of it needed a fork. That is the argument</span></li>
+            <li><span>None of it needed a fork.</span></li>
         </ul>
         <div class="tags reveal" style="--i:3">
             <span class="tag">github.com/ethereum/go-ethereum/pull/33906</span>
@@ -1396,38 +1394,71 @@ class SlidePresentation {
 class InlineEditor {
     constructor() {
         this.isActive = false;
-        this.storeKey = 'state-archival-deck-edits';
+        this.storeKey = 'state-archival-deck-edits-v2';
         this.toastEl = document.getElementById('toast');
         this.toggleBtn = document.getElementById('editToggle');
 
-        /* Stable index-based keys: element order never changes at runtime. */
         this.targets = Array.from(document.querySelectorAll(
             '.slide h1, .slide h2, .slide h3, .slide p, .slide li span, .slide .tag, ' +
             '.slide .kicker, .slide figcaption, .slide .stat .label, .slide .stat .value, ' +
             '.slide .stat .delta, .slide .callout, .slide .stamp, .slide .bar-label, ' +
             '.slide .bar-figs, .slide .slot-title'
         ));
-        this.targets.forEach((el, i) => { el.dataset.ed = 'e' + i; });
+
+        /* Keys are content-addressed, NOT positional.
+           An edit is stored against a hash of the text it replaced, so deleting
+           or reordering slides can never smear a saved edit onto a neighbouring
+           element. If the original text changes upstream, the saved edit stops
+           matching and is discarded and reported — never misapplied.
+           (v1 keyed by element index and did exactly that; drop it on sight.) */
+        try { localStorage.removeItem('state-archival-deck-edits'); } catch (_) {}
+        this.pristine = new Map();
+        const seen = new Map();
+        this.targets.forEach((el) => {
+            const text = el.innerHTML.trim().replace(/\s+/g, ' ');
+            const base = el.tagName.toLowerCase() + '.' + InlineEditor.hash(text);
+            const n = (seen.get(base) || 0) + 1;
+            seen.set(base, n);
+            el.dataset.ed = n > 1 ? base + '#' + n : base;
+            this.pristine.set(el, el.innerHTML);
+        });
 
         this.restore();
         this.wire();
+    }
+
+    /* FNV-1a, base36 — short, stable, no crypto needed for cache keys. */
+    static hash(s) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i);
+            h = Math.imul(h, 0x01000193);
+        }
+        return (h >>> 0).toString(36);
     }
 
     restore() {
         let saved;
         try { saved = JSON.parse(localStorage.getItem(this.storeKey) || '{}'); }
         catch (_) { saved = {}; }
-        let count = 0;
+        const keys = new Set(this.targets.map((el) => el.dataset.ed));
+        const stale = Object.keys(saved).filter((k) => !keys.has(k)).length;
+        let applied = 0;
         this.targets.forEach((el) => {
             const v = saved[el.dataset.ed];
-            if (typeof v === 'string' && v !== el.innerHTML) { el.innerHTML = v; count++; }
+            if (typeof v === 'string' && v !== el.innerHTML) { el.innerHTML = v; applied++; }
         });
-        if (count) this.toast(count + ' saved edit(s) restored');
+        if (applied || stale) {
+            this.toast(applied + ' edit(s) restored' + (stale ? ' · ' + stale + ' stale discarded' : ''));
+        }
     }
 
+    /* Store only what actually differs from the shipped text. */
     save() {
         const data = {};
-        this.targets.forEach((el) => { data[el.dataset.ed] = el.innerHTML; });
+        this.targets.forEach((el) => {
+            if (el.innerHTML !== this.pristine.get(el)) data[el.dataset.ed] = el.innerHTML;
+        });
         try { localStorage.setItem(this.storeKey, JSON.stringify(data)); }
         catch (_) { this.toast('localStorage full — export instead'); }
     }
