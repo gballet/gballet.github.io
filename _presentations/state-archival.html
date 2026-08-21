@@ -263,7 +263,7 @@ layout: null
         z-index: 4;
     }
     .rail .prompt-sym { color: var(--green); font-weight: 700; }
-    .rail .counter { color: var(--text); }
+    .rail .counter { color: var(--text); white-space: nowrap; }
     .rail .counter i { color: var(--mute); font-style: normal; }
 
     .stamp {
@@ -388,11 +388,12 @@ layout: null
         overflow: hidden;
     }
     .code pre { font-size: var(--code-size); line-height: 1.65; white-space: pre; overflow: hidden; }
-    .code .c { color: var(--mute); }              /* comment */
+    .code .c { color: var(--mute); }               /* comment */
     .code .k { color: #ff7b72; }                   /* keyword */
     .code .t { color: var(--amber); }              /* type */
     .code .s { color: var(--green); }              /* string / literal */
     .code .f { color: #79c0ff; }                   /* function / flag */
+    .code .del { color: var(--red); }              /* the "before" line */
     .code-caption { font-size: var(--small-size); color: var(--mute); }
 
     /* === STAT GRID ============================================ */
@@ -433,7 +434,7 @@ layout: null
     }
     .hero-stat .unit { font-size: var(--h3-size); color: var(--text); letter-spacing: 0.04em; }
 
-    /* 10x10 state map: 3 lit cells out of 100 */
+    /* 100-cell state map: 3 lit cells */
     .statemap {
         display: grid;
         grid-template-columns: repeat(20, 1fr);
@@ -523,6 +524,7 @@ layout: null
     .diagram .zone { fill: rgba(227, 179, 65, 0.07); stroke: var(--amber); stroke-width: 1.4; stroke-dasharray: 5 4; }
     .diagram .stub { fill: rgba(248, 81, 73, 0.08); stroke: var(--red); stroke-width: 1.5; stroke-dasharray: 5 4; }
     .diagram .file { fill: rgba(57, 211, 83, 0.07); stroke: var(--green-dim); stroke-width: 1.5; }
+    .diagram .gone { fill: none; stroke: var(--red); stroke-width: 2; }
     .diagram .flow { stroke: var(--amber); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
     .diagram .dash-anim { stroke-dasharray: 6 5; animation: march 1.6s linear infinite; }
     @keyframes march { to { stroke-dashoffset: -22; } }
@@ -543,7 +545,8 @@ layout: null
     /* === FIGURE SLOT ==========================================
        Image-ready: drop <img src="assets/foo.png" alt="..."> inside
        any .figure and the dashed placeholder hides itself. Images are
-       capped by the base rules (max-height: min(50vh, 400px)).
+       capped by the base rules (max-height: min(50vh, 400px)); the
+       .wide modifier is for a figure that IS the slide.
        ========================================================== */
     .figure { display: flex; flex-direction: column; gap: var(--element-gap); align-items: flex-start; width: 100%; }
     .figure img {
@@ -552,6 +555,18 @@ layout: null
         border: 1px solid var(--hair);
         background: var(--bg-lift);
     }
+    .figure.wide { align-items: center; }
+    .figure.wide img {
+        /* this figure IS the slide, but the heading, caption and slide padding
+           still have to fit: 72vh is the largest that clears them at 16:9. */
+        max-height: min(72vh, 720px);
+        border-color: var(--green-dim);
+        box-shadow: 0 0 clamp(18px, 3vw, 46px) rgba(0, 0, 0, 0.6);
+    }
+    /* "plate" slides: one big figure, heading demoted so the image dominates */
+    .slide.plate .slide-content { gap: clamp(0.25rem, 0.8vh, 0.6rem); }
+    .slide.plate h2 { font-size: var(--h3-size); color: var(--text); letter-spacing: 0; }
+    .figure.wide figcaption { text-align: center; }
     .figure-slot {
         width: min(88vw, 900px);
         height: min(42vh, 340px);
@@ -707,12 +722,14 @@ layout: null
     <div class="toast" id="toast"></div>
 
 <!-- =============================================================
-     SLIDE 01 — TITLE
+     TITLE
+     Slide counters in .rail are filled in by JS from the slide's
+     index, so reordering slides can never leave them stale.
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span>~/talks/state-archival <span class="prompt-sym">$</span> present</span>
-        <span class="counter">01<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">&gt; geth archive generate <b>--hoodi</b></div>
@@ -729,15 +746,15 @@ layout: null
 </section>
 
 <!-- =============================================================
-     SLIDE 02 — THE PROBLEM: the DB punishes growth
+     PART 1 — THE PROBLEM
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> du -sh chaindata</span>
-        <span class="counter">02<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">the problem</div>
+        <div class="kicker reveal" style="--i:0">part 1 · the problem</div>
         <h2 class="reveal" style="--i:1">The database gets <s>slower</s> as it gets fuller</h2>
         <hr class="rule reveal-rule" style="--i:2">
         <ul class="bullet-list reveal" style="--i:3">
@@ -751,16 +768,13 @@ layout: null
     <div class="stamp">01 · Problem</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 03 — THE OBSERVATION: hero stat, 3%/month
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> measure --touched-per-month</span>
-        <span class="counter">03<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">the observation</div>
+        <div class="kicker reveal" style="--i:0">part 1 · the observation</div>
         <h2 class="reveal" style="--i:1">But almost nothing moves</h2>
         <div class="hero-stat reveal" style="--i:2">
             <span class="num">3%</span>
@@ -773,48 +787,39 @@ layout: null
 </section>
 
 <!-- =============================================================
-     SLIDE 04 — PRECEDENT: history expiry did this already
+     PART 2 — PRECEDENT: HISTORY EXPIRY
      ============================================================= -->
 <section class="slide">
     <div class="rail">
-        <span><span class="prompt-sym">$</span> git log --grep 'history expiry'</span>
-        <span class="counter">04<i> / 17</i></span>
+        <span><span class="prompt-sym">$</span> man 4444</span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">precedent</div>
-        <h2 class="reveal" style="--i:1">We already solved this shape of problem</h2>
-        <div class="cols reveal" style="--i:2">
-            <div class="col">
-                <h3>THEN · history</h3>
-                <ul class="bullet-list tight">
-                    <li><span>Block count and size outgrew the database</span></li>
-                    <li><span>Old blocks were moved to an <b>archive</b> outside the DB</span></li>
-                    <li><span>Rarely read, so the trade was obvious</span></li>
-                </ul>
-            </div>
-            <div class="col now">
-                <h3>NOW · state</h3>
-                <ul class="bullet-list tight">
-                    <li><span>Same growth curve, same DB pressure</span></li>
-                    <li><span>Cold state moves to an <b>archive file</b>, hot state stays</span></li>
-                    <li><span>Bonus: an unused subtree can be dropped entirely and rebuilt from its leaves</span></li>
-                </ul>
-            </div>
-        </div>
+        <div class="kicker reveal" style="--i:0">part 2 · precedent</div>
+        <h2 class="reveal" style="--i:1">History expiry already made this move</h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>400+ GB of headers, bodies and receipts that no block needs to validate the tip</span></li>
+            <li><span>Clients stopped serving anything older than a year over p2p, and pruned it locally</span></li>
+            <li><span>The data did not die — it moved <b>out of band</b>: flat era files, torrents, Portal, indexers</span></li>
+            <li><span>Consensus never noticed. Disk requirements dropped anyway</span></li>
+            <li><span>State is the same problem, one layer down</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">EIP-4444 is still formally <b class="a">Stagnant</b>. Clients pruned history anyway, behind flags. Remember that when we get to the roadmap.</p>
     </div>
-    <div class="stamp">02 · Idea</div>
+    <div class="stamp">02 · Precedent</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 05 — THE IDEA
+     PART 3 — THE METHOD
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> cat trie/archiver.go</span>
-        <span class="counter">05<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">the idea</div>
+        <div class="kicker reveal" style="--i:0">part 3 · the method</div>
         <h2 class="reveal" style="--i:1">Expire the subtree, <em>keep the leaves</em></h2>
         <hr class="rule reveal-rule" style="--i:2">
         <ul class="bullet-list reveal" style="--i:3">
@@ -825,23 +830,20 @@ layout: null
             <li><span>Need it again? Read the leaves back and re-hash 3 levels on the fly</span></li>
         </ul>
     </div>
-    <div class="stamp">02 · Idea</div>
+    <div class="stamp">03 · Method</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 06 — DIAGRAM: the swap
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> archive generate --dry-run</span>
-        <span class="counter">06<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">What the swap looks like</h2>
         <figure class="figure reveal" style="--i:1">
             <!-- CSS/SVG diagram: height-3 subtree lifted out of the DB into the archive file.
                  To replace with a bitmap later, add <img src="assets/swap.png" alt="..."> here;
-                 the .figure:has(img) rule hides this SVG's placeholder sibling automatically. -->
+                 the .figure:has(img) rule hides any placeholder automatically. -->
             <svg class="diagram" viewBox="0 0 760 250" role="img" aria-label="A height-3 subtree, four levels deep, is removed from the database and written to the archive file. Its parent keeps the subtree root hash and points at a stub node holding an offset and a size.">
                 <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -900,16 +902,13 @@ layout: null
             <figcaption>Height is counted from the leaves: leaves are 0, so a height-3 node has four levels under its own hash. The DB keeps that hash; everything below it becomes bytes in one append-only file.</figcaption>
         </figure>
     </div>
-    <div class="stamp">02 · Idea</div>
+    <div class="stamp">03 · Method</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 07 — CODE: the stub is 17 bytes
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> cat trie/expired_node.go</span>
-        <span class="counter">07<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">The replacement is <em>17 bytes</em></h2>
@@ -927,16 +926,13 @@ layout: null
         </div>
         <p class="code-caption reveal" style="--i:2">On disk: <b class="g">1</b> marker byte + <b class="g">8</b> offset + <b class="g">8</b> size. A whole subtree collapses to that.</p>
     </div>
-    <div class="stamp">03 · Mechanism</div>
+    <div class="stamp">03 · Method</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 08 — RESURRECTION
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> archive verify --hoodi</span>
-        <span class="counter">08<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">resurrection</div>
@@ -950,19 +946,36 @@ layout: null
         </ul>
         <p class="note reveal" style="--i:4">Hashing work grows exponentially with subtree height. Height 3 rebuilds in negligible time; go deeper and the resurrection cost is what bites you. That's the whole reason the knob exists.</p>
     </div>
-    <div class="stamp">03 · Mechanism</div>
+    <div class="stamp">03 · Method</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 09 — WHY IT IS FASTER
-     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> geth archive --help</span>
+        <span class="counter"></span>
+    </div>
+    <div class="slide-content">
+        <h2 class="reveal" style="--i:0">One command, four subcommands</h2>
+        <div class="code reveal" style="--i:1">
+<pre><span class="s">$</span> geth archive generate <span class="f">--hoodi</span>        <span class="c"># walk trie, archive height-3 subtrees</span>
+<span class="s">$</span> geth archive verify <span class="f">--hoodi</span>          <span class="c"># resurrect everything, compare hashes</span>
+<span class="s">$</span> geth archive check-node <span class="f">--owner</span> <span class="t">H</span> <span class="f">--path</span> <span class="t">N</span>
+<span class="s">$</span> geth archive delete-journal <span class="f">--hoodi</span>  <span class="c"># drop pathdb journal after generate</span>
+
+<span class="c"># knobs: --output, --compaction-interval 1000, --dry-run</span></pre>
+        </div>
+        <p class="code-caption reveal" style="--i:2">Reads nodes straight from the persistent disk layer, bypassing in-memory diff layers, so what it archives is what is actually on disk.</p>
+    </div>
+    <div class="stamp">03 · Method</div>
+</section>
+
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> perf stat -- geth import</span>
-        <span class="counter">09<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">the counterintuitive part</div>
+        <div class="kicker reveal" style="--i:0">why it wins</div>
         <h2 class="reveal" style="--i:1">A flat file <em>beats</em> a database</h2>
         <div class="cols reveal" style="--i:2">
             <div class="col now">
@@ -983,42 +996,111 @@ layout: null
         </div>
         <p class="note reveal" style="--i:3">The trie stops paying for generality it never uses on cold data.</p>
     </div>
-    <div class="stamp">03 · Mechanism</div>
+    <div class="stamp">03 · Method</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 10 — THE CLI
+     PART 4 — WHAT CAN BE BUILT ON TOP
+     4.1 drop the archive file entirely
      ============================================================= -->
 <section class="slide">
     <div class="rail">
-        <span><span class="prompt-sym">$</span> geth archive --help</span>
-        <span class="counter">10<i> / 17</i></span>
+        <span><span class="prompt-sym">$</span> rm geth/nodearchive</span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <h2 class="reveal" style="--i:0">One command, four subcommands</h2>
-        <div class="code reveal" style="--i:1">
-<pre><span class="s">$</span> geth archive generate <span class="f">--hoodi</span>        <span class="c"># walk trie, archive height-3 subtrees</span>
-<span class="s">$</span> geth archive verify <span class="f">--hoodi</span>          <span class="c"># resurrect everything, compare hashes</span>
-<span class="s">$</span> geth archive check-node <span class="f">--owner</span> <span class="t">H</span> <span class="f">--path</span> <span class="t">N</span>
-<span class="s">$</span> geth archive delete-journal <span class="f">--hoodi</span>  <span class="c"># drop pathdb journal after generate</span>
+        <div class="kicker reveal" style="--i:0">part 4.1 · what this unlocks</div>
+        <h2 class="reveal" style="--i:1">Delete the file and you have <em>state expiry</em></h2>
+        <figure class="figure reveal" style="--i:2">
+            <svg class="diagram" viewBox="0 0 760 200" role="img" aria-label="The archive file is deleted. The stub node and the subtree root hash remain in the database, so the state root still computes, but the leaf data must come from a peer or a proof.">
+                <defs>
+                    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
+                    </marker>
+                </defs>
+                <!-- kept: stub + hash -->
+                <text class="lbl" x="14" y="20">KEPT · 17 bytes + the hash</text>
+                <circle class="nd" cx="120" cy="62" r="11"></circle>
+                <path class="edge-g" d="M131 70 L180 92"></path>
+                <rect class="stub" x="170" y="76" width="176" height="44" rx="3"></rect>
+                <text class="lbl" x="258" y="95" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <text class="lbl" x="258" y="111" text-anchor="middle">subtree root hash</text>
+                <text class="lbl-g" x="120" y="140" text-anchor="middle">root still computes</text>
 
-<span class="c"># knobs: --output, --compaction-interval 1000, --dry-run</span></pre>
-        </div>
-        <p class="code-caption reveal" style="--i:2">Reads nodes straight from the persistent disk layer, bypassing in-memory diff layers, so what it archives is what is actually on disk.</p>
+                <!-- gone: the file -->
+                <text class="lbl" x="430" y="20">GONE · the bytes</text>
+                <rect class="file" x="420" y="60" width="170" height="62" rx="3" style="opacity:0.35"></rect>
+                <text class="lbl" x="505" y="82" text-anchor="middle" style="opacity:0.5">geth/nodearchive</text>
+                <path class="gone" d="M424 64 L586 118 M586 64 L424 118"></path>
+
+                <!-- refill path -->
+                <path class="flow" d="M690 92 L600 92" marker-end="url(#arrow2)"></path>
+                <text class="lbl-g" x="700" y="80">peer</text>
+                <text class="lbl-g" x="700" y="98">proof</text>
+                <text class="lbl-g" x="700" y="116">indexer</text>
+            </svg>
+            <figcaption>The stub carries the hash; the file only carried the bytes. Drop it and the node keeps validating everything that never touches those subtrees.</figcaption>
+        </figure>
+        <p class="note reveal" style="--i:3">What you give up is the ability to answer for that subtree — so something has to hand the leaves back, exactly like history: a peer, a proof, or a third party. <b class="a">This is the design space the PR opens, not what it implements today.</b></p>
     </div>
-    <div class="stamp">04 · Results</div>
+    <div class="stamp">04 · What to build</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 11 — NUMBERS: Hoodi headline
+     PART 4.2 — EIP-8188: encoding
+     ============================================================= -->
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> open eips.ethereum.org/EIPS/eip-8188</span>
+        <span class="counter"></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 4.2 · what this unlocks</div>
+        <h2 class="reveal" style="--i:1">EIP-8188: put the <em>write age</em> in the state</h2>
+        <div class="code reveal" style="--i:2">
+<pre><span class="c">// one new field, on every account and every slot</span>
+<span class="del">-</span> account    = RLP([nonce, balance, storageRoot, codeHash])
+<span class="s">+</span> account    = RLP([nonce, balance, storageRoot, codeHash, <span class="t">last_written_block</span>])
+
+<span class="del">-</span> slot_value = RLP(value)
+<span class="s">+</span> slot_value = RLP([value, <span class="t">last_written_block</span>])</pre>
+        </div>
+        <p class="code-caption reveal" style="--i:3">Old entries stay readable: a 4-element account decodes as <b class="g">0</b>, and a bare slot bytestring (<b>0x80+</b>) is told apart from the new list (<b>0xc0+</b>) by its RLP prefix. Hard fork, but <b class="g">no tree transition</b>.</p>
+    </div>
+    <div class="stamp">04 · What to build</div>
+</section>
+
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> grep -n 'last_written_block' spec</span>
+        <span class="counter"></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 4.2 · how it works</div>
+        <h2 class="reveal" style="--i:1">Written, <s>never read</s></h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>A write stamps <b>block_number</b> on the entry; writing twice in one block is idempotent</span></li>
+            <li><span>Storage writes cascade to the account — its <b>storageRoot</b> changed anyway</span></li>
+            <li><span>Reads never stamp: otherwise SLOAD becomes a write and <b class="r">STATICCALL</b> stops being static (EIP-214)</span></li>
+            <li><span>Reverts restore it like balance or nonce</span></li>
+            <li><span>Cost: <b class="a">5 bytes</b> per account, <b class="a">6</b> per slot — ~10.8 GB worst case, and only for state written post-fork</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">Then archival stops guessing which subtrees are cold: every client reads the same consensus-verified write age and picks the same set.</p>
+    </div>
+    <div class="stamp">04 · What to build</div>
+</section>
+
+<!-- =============================================================
+     PART 5 — MEASUREMENTS
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> geth import --hoodi   <span style="color:#6e7681">x2</span></span>
-        <span class="counter">11<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">hoodi · 1,198,413 blocks imported twice</div>
+        <div class="kicker reveal" style="--i:0">part 5 · hoodi · 1,198,413 blocks imported twice</div>
         <h2 class="reveal" style="--i:1">Baseline vs archival</h2>
         <div class="stats three reveal" style="--i:2">
             <div class="stat hot">
@@ -1054,16 +1136,13 @@ layout: null
         </div>
         <p class="note reveal" style="--i:3">Hetzner dedicated, 12 cores / 22 GB / SSD. Blocks 1,217,349 → 2,415,761 replayed on identical snapshots.</p>
     </div>
-    <div class="stamp">04 · Results</div>
+    <div class="stamp">05 · Numbers</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 12 — CHART: throughput per block range
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> awk '/Mgas/' import.log</span>
-        <span class="counter">12<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">Faster in <em>every</em> range, not on average</h2>
@@ -1117,19 +1196,19 @@ layout: null
             <span>spread across all ranges: <b class="g">+17% … +25%</b></span>
         </div>
     </div>
-    <div class="stamp">04 · Results</div>
+    <div class="stamp">05 · Numbers</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 13 — RESERVED FIGURE SLOT (data collection in progress)
-     Drop the chart in as:
+     RESERVED FIGURE SLOT — measurements still being gathered.
+     Drop the plot in as:
        <img src="assets/state-archival-perf.png" alt="...">
-     inside the .figure below — the dashed placeholder hides itself.
+     inside the .figure below; the dashed placeholder hides itself.
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> ./collect-metrics.sh <span style="color:#e3b341">--running</span></span>
-        <span class="counter">13<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">Fresh numbers, landing before the talk</h2>
@@ -1141,16 +1220,13 @@ layout: null
             <figcaption>Read latency, write latency and DB size over time — baseline vs archival.</figcaption>
         </figure>
     </div>
-    <div class="stamp">04 · Results</div>
+    <div class="stamp">05 · Numbers</div>
 </section>
 
-<!-- =============================================================
-     SLIDE 14 — WHAT IT COSTS
-     ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> echo $COSTS</span>
-        <span class="counter">14<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">honest ledger</div>
@@ -1164,61 +1240,81 @@ layout: null
             <li><span>Naming is already contested — review suggests <b>geth trie compress</b>, since this is offline compression, not "archive mode"</span></li>
         </ul>
     </div>
-    <div class="stamp">05 · Argument</div>
+    <div class="stamp">05 · Numbers</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 15 — THE SPEECH: change outside the protocol
+     PART 6 — OUT OF PROTOCOL BEATS IN PROTOCOL
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span><span class="prompt-sym">$</span> whoami --no-fork-required</span>
-        <span class="counter">15<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">the actual point</div>
-        <h2 class="reveal" style="--i:1">This lives <em>outside</em> the protocol</h2>
+        <div class="kicker reveal" style="--i:0">part 6 · the actual point</div>
+        <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
         <div class="callout reveal" style="--i:2">Same state root. Same blocks. Same consensus. <b>Nothing to negotiate.</b></div>
         <ul class="bullet-list reveal" style="--i:3">
-            <li><span>No EIP, no fork window, no cross-client coordination</span></li>
-            <li><span>Opt-in per node, and reversible: <b>verify</b>, then walk it back if you don't like it</span></li>
-            <li><span>Iterate at client speed instead of fork cadence</span></li>
-            <li><span>Measure on a real chain first; only ask for protocol changes you have data for</span></li>
+            <li><span>One client, one flag, one node's disk — no fork window, no cross-client rollout</span></li>
+            <li><span>Reversible: run <b>verify</b>, then walk it back if it disappoints</span></li>
+            <li><span>Failure stays local. A bad client-side call costs a resync, not a chain split</span></li>
+            <li><span>The measurement comes first, and the EIP comes later with data already attached</span></li>
+            <li><span>Consensus is the tool of last resort — for what genuinely needs it, like 8188's metadata</span></li>
         </ul>
     </div>
-    <div class="stamp">05 · Argument</div>
+    <div class="stamp">06 · Argument</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 16 — WHERE THE PROTOCOL HELPS: EIP-8188
+     PART 7 — THE STRAWMAP
+     Image: strawmap.org (Google Drawing export), EF Architecture's
+     draft L1 roadmap. Local copy in assets/ so it travels with the
+     deck for PDF export and offline presenting.
      ============================================================= -->
-<section class="slide">
+<section class="slide plate">
     <div class="rail">
-        <span><span class="prompt-sym">$</span> open eips.ethereum.org/EIPS/eip-8188</span>
-        <span class="counter">16<i> / 17</i></span>
+        <span><span class="prompt-sym">$</span> curl strawmap.org</span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">better together</div>
-        <h2 class="reveal" style="--i:1">Where the protocol <em>does</em> help</h2>
+        <h2 class="reveal" style="--i:0">Meanwhile, the roadmap</h2>
+        <figure class="figure wide reveal" style="--i:1">
+            <img src="assets/strawmap.png" alt="The Ethereum L1 strawmap: three swimlanes for consensus, data and execution layers, with dozens of linked boxes spread across columns from 2026 through longer term and north stars.">
+            <figcaption>strawmap.org — EF Architecture's draft L1 roadmap, updated Aug 20 2026. Three layers, columns from Glamsterdam out to "north stars".</figcaption>
+        </figure>
+    </div>
+    <div class="stamp">07 · Strawmap</div>
+</section>
+
+<section class="slide">
+    <div class="rail">
+        <span><span class="prompt-sym">$</span> grep -c 'box' strawmap</span>
+        <span class="counter"></span>
+    </div>
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 7 · the strawmap</div>
+        <h2 class="reveal" style="--i:1">Too big to <s>care</s> about</h2>
         <hr class="rule reveal-rule" style="--i:2">
         <ul class="bullet-list reveal" style="--i:3">
-            <li><span><b>EIP-8188</b> records <b class="g">last_written_block</b> on every account and slot</span></li>
-            <li><span>A consensus-verified write age: every client picks the same cold set, instead of guessing from local caches</span></li>
-            <li><span>Reads never bump it — otherwise a read becomes a write and STATICCALL breaks</span></li>
-            <li><span>Cost: 5 bytes per account, 6 per slot — ~10.8 GB worst case, and that buys targeted archival</span></li>
+            <li><span>Three layers, dozens of boxes, columns running out to <b>"longer term"</b> and <b>"north stars"</b></span></li>
+            <li><span>Its own legend admits it: a dedicated <b class="a">"uncertainty about ever shipping upgrade"</b> emoji, and "strawman: work-in-progress rough consensus"</span></li>
+            <li><span>Everything reads as blocked on everything — post-quantum, leanEVM, partitioned binary tree, endgame state</span></li>
+            <li><span>Users feel none of it. They feel sync time, disk, and fees</span></li>
+            <li><span>What you just saw is <b class="g">not on that chart</b>, needed no fork, and is already faster</span></li>
         </ul>
-        <p class="note reveal" style="--i:4">Client-side archival works today on heuristics; write-age metadata turns it from a guess into a decision.</p>
+        <p class="note reveal" style="--i:4">Research-y roadmaps are a coordination artefact, not a delivery mechanism. History expiry is the tell: the EIP still says Stagnant, and clients shipped it anyway.</p>
     </div>
-    <div class="stamp">05 · Argument</div>
+    <div class="stamp">07 · Strawmap</div>
 </section>
 
 <!-- =============================================================
-     SLIDE 17 — CLOSE
+     CLOSE
      ============================================================= -->
 <section class="slide">
     <div class="rail">
         <span>~/talks/state-archival <span class="prompt-sym">$</span> exit</span>
-        <span class="counter">17<i> / 17</i></span>
+        <span class="counter"></span>
     </div>
     <div class="slide-content">
         <h1 class="reveal" style="--i:0">Move the cold<br>state <em>out</em><span class="cursor"></span></h1>
@@ -1226,7 +1322,8 @@ layout: null
         <ul class="bullet-list reveal" style="--i:2">
             <li><span>3% moves per month — stop making the other 97% part of the hot path</span></li>
             <li><span>Height-3 subtrees to a flat file: <b class="g">−17.5%</b> import time, <b class="g">+21%</b> throughput</span></li>
-            <li><span>No fork needed to try it. A fork would only make it sharper</span></li>
+            <li><span>Delete the file and it becomes expiry; add 8188 and it stops guessing</span></li>
+            <li><span>None of it needed a fork. That is the argument</span></li>
         </ul>
         <div class="tags reveal" style="--i:3">
             <span class="tag">github.com/ethereum/go-ethereum/pull/33906</span>
@@ -1252,6 +1349,7 @@ class SlidePresentation {
         this.dotsWrap = document.getElementById('navDots');
         this.hint = document.getElementById('kbHint');
 
+        this.numberSlides();
         this.buildStateMap();
         this.setupNavDots();
         this.setupIntersectionObserver();
@@ -1260,7 +1358,19 @@ class SlidePresentation {
         this.updateChrome(0);
     }
 
-    /* --- Slide 03 decoration: 100 cells, 3 of them hot ---------- */
+    /* --- Counters are derived, never hand-written ---------------
+       Reordering or inserting slides can therefore never leave a
+       stale "07 / 17" behind. */
+    numberSlides() {
+        const total = String(this.slides.length).padStart(2, '0');
+        this.slides.forEach((slide, i) => {
+            const counter = slide.querySelector('.counter');
+            if (!counter) return;
+            counter.innerHTML = String(i + 1).padStart(2, '0') + '<i> / ' + total + '</i>';
+        });
+    }
+
+    /* --- Problem slide decoration: 100 cells, 3 of them hot ----- */
     buildStateMap() {
         const map = document.getElementById('stateMap');
         if (!map) return;
