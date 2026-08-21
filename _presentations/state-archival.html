@@ -511,6 +511,9 @@ layout: null
 
     /* === DIAGRAMS (inline SVG) ================================ */
     .diagram { width: 100%; max-height: min(46vh, 380px); }
+    .diagram.compact { max-height: min(33vh, 250px); }
+    .diagram .tiny { font-size: 10px; fill: var(--mute); }
+    .diagram .lbl-a { font-size: 13px; fill: var(--amber); font-weight: 700; }
     .diagram text { font-family: var(--font); fill: var(--text); }
     .diagram .lbl { font-size: 13px; fill: var(--mute); }
     .diagram .lbl-g { font-size: 13px; fill: var(--green); font-weight: 700; }
@@ -520,6 +523,10 @@ layout: null
     .diagram .edge-g { stroke: var(--green); stroke-width: 1.8; fill: none; }
     .diagram .nd { fill: var(--bg-lift); stroke: var(--mute); stroke-width: 1.4; }
     .diagram .nd-g { fill: rgba(57, 211, 83, 0.14); stroke: var(--green); stroke-width: 1.6; }
+    .diagram .nd-a { fill: rgba(227, 179, 65, 0.16); stroke: var(--amber); stroke-width: 1.7; }
+    .diagram .edge-a { stroke: var(--amber); stroke-width: 2; fill: none; }
+    .diagram .leaf-w { fill: rgba(57, 211, 83, 0.5); stroke: var(--green); stroke-width: 1.4; }
+    .diagram .split { stroke: var(--hair); stroke-width: 1; stroke-dasharray: 3 4; fill: none; }
     .diagram .leaf { fill: rgba(201, 209, 217, 0.1); stroke: var(--hair); stroke-width: 1.2; }
     .diagram .zone { fill: rgba(227, 179, 65, 0.07); stroke: var(--amber); stroke-width: 1.4; stroke-dasharray: 5 4; }
     .diagram .stub { fill: rgba(248, 81, 73, 0.08); stroke: var(--red); stroke-width: 1.5; stroke-dasharray: 5 4; }
@@ -827,7 +834,7 @@ layout: null
             <li><span>Append their leaf records to one flat file: <b>&lt;datadir&gt;/geth/nodearchive</b></span></li>
             <li><span>Delete every node of that subtree from the DB, leave a stub holding <b>offset + size</b></span></li>
             <li><span>Keep the subtree root hash, so the state root <b class="g">does not change</b></span></li>
-            <li><span>Need it again? Read the leaves back and re-hash 3 levels on the fly</span></li>
+            <li><span>Need it again? Load the records back into memory — <b>reading never hashes</b>, only writing does</span></li>
         </ul>
     </div>
     <div class="stamp">03 · Method</div>
@@ -928,40 +935,75 @@ layout: null
 
 <section class="slide">
     <div class="rail">
-        <span><span class="prompt-sym">$</span> archive verify --hoodi</span>
+        <span><span class="prompt-sym">$</span> trace read; trace write</span>
         <span class="counter"></span>
     </div>
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">resurrection</div>
-        <h2 class="reveal" style="--i:1">Reading a cold node is just <em>hashing</em></h2>
-        <hr class="rule reveal-rule" style="--i:2">
-        <ul class="bullet-list reveal" style="--i:3">
-            <li><span>Resolver reads the records at <b>(offset, size)</b> — one seek into a flat file</span></li>
-            <li><span>Leaves are re-inserted, the subtree is rebuilt, hashes recomputed bottom-up</span></li>
-            <li><span>The result is checked against the stored subtree root: <b class="g">no trust required</b></span></li>
-            <li><span><b>geth archive verify</b> does this for every archived node, accounts and storage</span></li>
+        <div class="kicker reveal" style="--i:0">read path vs write path</div>
+        <h2 class="reveal" style="--i:1">Reads don't hash — <em>writes</em> do</h2>
+        <figure class="figure reveal" style="--i:2">
+            <svg class="diagram compact" viewBox="0 0 780 212" role="img" aria-label="On the read path, the stub resolves to archive records that are loaded into memory and the requested value is returned, with no hashing. On the write path, only the nodes on the path from the written leaf up to the subtree root are re-hashed and persisted; untouched sibling subtrees are re-archived as new expired nodes with updated offsets and sizes, and the existing archive records stay valid.">
+                <defs>
+                    <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
+                    </marker>
+                </defs>
+
+                <!-- READ: stub → records in memory → the value. No hashing at all. -->
+                <text class="lbl-g" x="12" y="16">READ · no hashing</text>
+                <rect class="stub" x="20" y="32" width="140" height="34" rx="3"></rect>
+                <text class="lbl" x="90" y="53" text-anchor="middle">expiredNode</text>
+                <path class="flow" d="M90 70 L90 92" marker-end="url(#arrow3)"></path>
+                <rect class="file" x="14" y="96" width="152" height="52" rx="3"></rect>
+                <text class="lbl-g" x="90" y="116" text-anchor="middle">nodearchive</text>
+                <path class="edge-g" d="M28 126 H152 M28 134 H132 M28 142 H146"></path>
+                <path class="flow" d="M172 122 L208 122" marker-end="url(#arrow3)"></path>
+                <rect class="leaf-w" x="212" y="106" width="58" height="32" rx="3"></rect>
+                <text class="tiny" x="241" y="126" text-anchor="middle" style="fill:#04140a;font-weight:700">value</text>
+                <text class="tiny" x="12" y="170">one seek · records into memory · read the leaf you want</text>
+
+                <path class="split" d="M320 18 V186"></path>
+
+                <!-- WRITE: only the path is re-hashed; siblings become fresh stubs. -->
+                <text class="lbl-a" x="348" y="16">WRITE · re-hash the path only</text>
+                <circle class="nd-a" cx="430" cy="44" r="10"></circle>
+                <text class="tiny" x="412" y="48" text-anchor="end">subtree root</text>
+                <path class="edge-a" d="M423 52 L400 84"></path>
+                <circle class="nd-a" cx="394" cy="92" r="9"></circle>
+                <path class="edge-a" d="M388 100 L376 132"></path>
+                <rect class="leaf-w" x="366" y="134" width="18" height="18" rx="2"></rect>
+                <text class="tiny" x="375" y="166" text-anchor="middle">written</text>
+                <!-- sibling internal nodes: re-archived, not rebuilt -->
+                <path class="edge" d="M440 42 L456 40"></path>
+                <rect class="stub" x="458" y="26" width="112" height="28" rx="3"></rect>
+                <text class="tiny" x="514" y="44" text-anchor="middle">offset + size</text>
+                <path class="edge" d="M403 96 L420 108"></path>
+                <rect class="stub" x="422" y="96" width="112" height="28" rx="3"></rect>
+                <text class="tiny" x="478" y="114" text-anchor="middle">offset + size</text>
+                <path class="flow dash-anim" d="M574 44 L618 74" marker-end="url(#arrow3)"></path>
+                <path class="flow dash-anim" d="M538 112 L616 106" marker-end="url(#arrow3)"></path>
+                <rect class="file" x="620" y="78" width="150" height="52" rx="3"></rect>
+                <text class="lbl-g" x="695" y="98" text-anchor="middle">nodearchive</text>
+                <path class="edge-g" d="M634 108 H756 M634 116 H736 M634 124 H750"></path>
+                <text class="tiny" x="695" y="146" text-anchor="middle">records untouched, still valid</text>
+
+                <!-- legend -->
+                <circle class="nd-a" cx="24" cy="197" r="5"></circle>
+                <text class="tiny" x="36" y="201">re-hashed &amp; re-persisted</text>
+                <rect class="stub" x="212" y="192" width="12" height="10"></rect>
+                <text class="tiny" x="230" y="201">expiredNode · offset+size rewritten</text>
+                <rect class="leaf-w" x="472" y="192" width="10" height="10"></rect>
+                <text class="tiny" x="488" y="201">written leaf</text>
+                <rect class="file" x="574" y="192" width="14" height="10"></rect>
+                <text class="tiny" x="594" y="201">archive, never invalidated</text>
+            </svg>
+        </figure>
+        <ul class="bullet-list tight reveal" style="--i:3">
+            <li><span><b>Read:</b> load the records at <b>(offset, size)</b> into memory, return the leaf you asked for — <b class="g">zero hashes</b></span></li>
+            <li><span><b>Write:</b> the new value invalidates the hashes above it, so <b class="a">that path</b> is rebuilt and re-persisted</span></li>
+            <li><span>Untouched siblings never come back as nodes — they become new <b>expiredNodes</b>, offset and size rewritten</span></li>
         </ul>
-        <p class="note reveal" style="--i:4">Hashing work grows exponentially with subtree height. Height 3 rebuilds in negligible time; go deeper and the resurrection cost is what bites you. That's the whole reason the knob exists.</p>
-    </div>
-    <div class="stamp">03 · Method</div>
-</section>
-
-<section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> geth archive --help</span>
-        <span class="counter"></span>
-    </div>
-    <div class="slide-content">
-        <h2 class="reveal" style="--i:0">One command, four subcommands</h2>
-        <div class="code reveal" style="--i:1">
-<pre><span class="s">$</span> geth archive generate <span class="f">--hoodi</span>        <span class="c"># walk trie, archive height-3 subtrees</span>
-<span class="s">$</span> geth archive verify <span class="f">--hoodi</span>          <span class="c"># resurrect everything, compare hashes</span>
-<span class="s">$</span> geth archive check-node <span class="f">--owner</span> <span class="t">H</span> <span class="f">--path</span> <span class="t">N</span>
-<span class="s">$</span> geth archive delete-journal <span class="f">--hoodi</span>  <span class="c"># drop pathdb journal after generate</span>
-
-<span class="c"># knobs: --output, --compaction-interval 1000, --dry-run</span></pre>
-        </div>
-        <p class="code-caption reveal" style="--i:2">Reads nodes straight from the persistent disk layer, bypassing in-memory diff layers, so what it archives is what is actually on disk.</p>
+        <p class="note reveal" style="--i:4">A write costs one path, not one subtree, and nothing already in the archive is invalidated. Re-hashing cost is what grows with subtree height — that's the real reason height 3 is the sweet spot.</p>
     </div>
     <div class="stamp">03 · Method</div>
 </section>
