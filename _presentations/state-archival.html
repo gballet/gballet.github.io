@@ -248,23 +248,7 @@ layout: null
         background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0 1px, transparent 1px 3px);
     }
 
-    /* === SLIDE CHROME: rails, counter, section tag ============ */
-    .rail {
-        position: absolute;
-        top: var(--slide-padding);
-        left: var(--slide-padding);
-        right: var(--slide-padding);
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        font-size: var(--small-size);
-        letter-spacing: 0.12em;
-        color: var(--mute);
-        z-index: 4;
-    }
-    .rail .prompt-sym { color: var(--green); font-weight: 700; }
-    .rail .counter { color: var(--text); white-space: nowrap; }
-    .rail .counter i { color: var(--mute); font-style: normal; }
+    /* === SLIDE CHROME: section stamp ========================== */
 
     .stamp {
         position: absolute;
@@ -730,14 +714,8 @@ layout: null
 
 <!-- =============================================================
      TITLE
-     Slide counters in .rail are filled in by JS from the slide's
-     index, so reordering slides can never leave them stale.
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span>~/talks/state-archival <span class="prompt-sym">$</span> present</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">&gt; geth archive generate <b>--hoodi</b></div>
         <h1 class="reveal" style="--i:1">State <em>Archival</em><span class="cursor"></span></h1>
@@ -756,10 +734,6 @@ layout: null
      PART 1 — THE PROBLEM
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> du -sh chaindata</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 1 · the problem</div>
         <h2 class="reveal" style="--i:1">The database gets <s>slower</s> as it gets fuller</h2>
@@ -776,10 +750,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> measure --touched-per-month</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 1 · the observation</div>
         <h2 class="reveal" style="--i:1">But almost nothing moves</h2>
@@ -797,10 +767,6 @@ layout: null
      PART 2 — PRECEDENT: HISTORY EXPIRY
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> man 4444</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 2 · precedent</div>
         <h2 class="reveal" style="--i:1">History expiry already made this move</h2>
@@ -821,10 +787,6 @@ layout: null
      PART 3 — THE METHOD
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> cat trie/archiver.go</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 3 · the method</div>
         <h2 class="reveal" style="--i:1">Expire internal nodes, <em>keep the leaves</em></h2>
@@ -841,10 +803,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> archive generate --dry-run</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">What the swap looks like</h2>
         <figure class="figure reveal" style="--i:1">
@@ -913,10 +871,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> cat trie/expired_node.go</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">The replacement is <em>17 bytes</em></h2>
         <div class="code reveal" style="--i:1">
@@ -934,10 +888,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> trace read; trace write</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">read path vs write path</div>
         <h2 class="reveal" style="--i:1">Reads don't hash — <em>writes</em> do</h2>
@@ -1009,10 +959,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> perf stat -- geth import</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">why it wins</div>
         <h2 class="reveal" style="--i:1">A flat file <em>beats</em> a database</h2>
@@ -1043,10 +989,6 @@ layout: null
      4.1 drop the archive file entirely
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> rm geth/nodearchive</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 4.1 · what this unlocks</div>
         <h2 class="reveal" style="--i:1">Delete the file and you have <em>state expiry</em></h2>
@@ -1089,10 +1031,6 @@ layout: null
      PART 4.2 — EIP-8188: encoding
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> open eips.ethereum.org/EIPS/eip-8188</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 4.2 · what this unlocks</div>
         <h2 class="reveal" style="--i:1">EIP-8188: put the <em>write age</em> in the state</h2>
@@ -1110,10 +1048,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> grep -n 'last_written_block' spec</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 4.2 · how it works</div>
         <h2 class="reveal" style="--i:1">Written, <s>never read</s></h2>
@@ -1134,10 +1068,6 @@ layout: null
      PART 5 — MEASUREMENTS
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> geth import --hoodi   <span style="color:#6e7681">x2</span></span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 5 · hoodi · 1,198,413 blocks imported twice</div>
         <h2 class="reveal" style="--i:1">Baseline vs archival</h2>
@@ -1179,10 +1109,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> awk '/Mgas/' import.log</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">Faster in <em>every</em> range, not on average</h2>
         <!-- Bars scaled against a 380 Mgas/s ceiling: width = value / 380.
@@ -1245,10 +1171,6 @@ layout: null
      inside the .figure below; the dashed placeholder hides itself.
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> ./collect-metrics.sh <span style="color:#e3b341">--running</span></span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">Fresh numbers, landing before the talk</h2>
         <figure class="figure reveal" style="--i:1">
@@ -1263,10 +1185,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> echo $COSTS</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">honest ledger</div>
         <h2 class="reveal" style="--i:1">What it costs</h2>
@@ -1285,10 +1203,6 @@ layout: null
      PART 6 — OUT OF PROTOCOL BEATS IN PROTOCOL
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> whoami --no-fork-required</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 6 · the actual point</div>
         <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
@@ -1311,10 +1225,6 @@ layout: null
      deck for PDF export and offline presenting.
      ============================================================= -->
 <section class="slide plate">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> curl strawmap.org</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">Meanwhile, the roadmap</h2>
         <figure class="figure wide reveal" style="--i:1">
@@ -1326,10 +1236,6 @@ layout: null
 </section>
 
 <section class="slide">
-    <div class="rail">
-        <span><span class="prompt-sym">$</span> grep -c 'box' strawmap</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 7 · the strawmap</div>
         <h2 class="reveal" style="--i:1">Too big to <s>care</s> about</h2>
@@ -1350,10 +1256,6 @@ layout: null
      CLOSE
      ============================================================= -->
 <section class="slide">
-    <div class="rail">
-        <span>~/talks/state-archival <span class="prompt-sym">$</span> exit</span>
-        <span class="counter"></span>
-    </div>
     <div class="slide-content">
         <h1 class="reveal" style="--i:0">Move the cold<br>state <em>out</em><span class="cursor"></span></h1>
         <hr class="rule reveal-rule" style="--i:1">
@@ -1387,25 +1289,12 @@ class SlidePresentation {
         this.dotsWrap = document.getElementById('navDots');
         this.hint = document.getElementById('kbHint');
 
-        this.numberSlides();
         this.buildStateMap();
         this.setupNavDots();
         this.setupIntersectionObserver();
         this.setupKeyboardNav();
         this.setupTouchNav();
         this.updateChrome(0);
-    }
-
-    /* --- Counters are derived, never hand-written ---------------
-       Reordering or inserting slides can therefore never leave a
-       stale "07 / 17" behind. */
-    numberSlides() {
-        const total = String(this.slides.length).padStart(2, '0');
-        this.slides.forEach((slide, i) => {
-            const counter = slide.querySelector('.counter');
-            if (!counter) return;
-            counter.innerHTML = String(i + 1).padStart(2, '0') + '<i> / ' + total + '</i>';
-        });
     }
 
     /* --- Problem slide decoration: 100 cells, 3 of them hot ----- */
