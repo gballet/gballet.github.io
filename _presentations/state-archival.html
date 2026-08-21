@@ -1615,7 +1615,17 @@ const hotzone = document.querySelector('.edit-hotzone');
 const editToggle = document.getElementById('editToggle');
 let hideTimeout = null;
 
-const showToggle = () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); };
+/* A headless browser (and any user whose cursor happens to rest in the corner)
+   parks the pointer at 0,0 — inside the hotzone — so `mouseenter` fires on load
+   and the button shows up in screenshots and PDF exports. Require a real
+   pointer movement first. */
+let pointerMoved = false;
+window.addEventListener('mousemove', () => { pointerMoved = true; }, { once: true, passive: true });
+const showToggle = () => {
+    if (!pointerMoved) return;
+    clearTimeout(hideTimeout);
+    editToggle.classList.add('show');
+};
 const scheduleHide = () => {
     hideTimeout = setTimeout(() => {
         if (!editor.isActive) editToggle.classList.remove('show');
