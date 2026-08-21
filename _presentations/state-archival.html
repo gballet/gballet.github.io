@@ -801,9 +801,9 @@ layout: null
         <ul class="bullet-list reveal" style="--i:3">
             <li><span>400+ GB of headers, bodies and receipts that no block needs to validate the tip</span></li>
             <li><span>Clients stopped serving anything older than a year over p2p, and pruned it locally</span></li>
-            <li><span>The data did not die — it moved <b>out of band</b>: flat era files, torrents, Portal, indexers</span></li>
+            <li><span>The data did not die — it moved <b>out of band</b>: flat era files, torrents, indexers</span></li>
             <li><span>Consensus never noticed. Disk requirements dropped anyway</span></li>
-            <li><span>State is the same problem, one layer down</span></li>
+            <li><span>If a significant portion of the state is "cold", the same method can be applied.</span></li>
         </ul>
         <p class="note reveal" style="--i:4">EIP-4444 is still formally <b class="a">Stagnant</b>. Clients pruned history anyway, behind flags. Remember that when we get to the roadmap.</p>
     </div>
@@ -820,7 +820,7 @@ layout: null
     </div>
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 3 · the method</div>
-        <h2 class="reveal" style="--i:1">Expire the subtree, <em>keep the leaves</em></h2>
+        <h2 class="reveal" style="--i:1">Expire internal nodes, <em>keep the leaves</em></h2>
         <hr class="rule reveal-rule" style="--i:2">
         <ul class="bullet-list reveal" style="--i:3">
             <li><span>Walk the trie and pick subtrees at <b class="g">height 3</b> — height counted from the leaves, so leaves are 0</span></li>
@@ -913,10 +913,7 @@ layout: null
     <div class="slide-content">
         <h2 class="reveal" style="--i:0">The replacement is <em>17 bytes</em></h2>
         <div class="code reveal" style="--i:1">
-<pre><span class="c">// Valid MPT nodes are always RLP lists (0xc0+),</span>
-<span class="c">// so 0x00 is a free, unambiguous marker byte.</span>
-<span class="k">const</span> expiredNodeMarker = <span class="s">0x00</span>
-
+<pre>
 <span class="k">type</span> <span class="t">expiredNode</span> <span class="k">struct</span> {
     offset          <span class="t">uint64</span> <span class="c">// where the leaves live</span>
     size            <span class="t">uint64</span> <span class="c">// how many bytes to read</span>
@@ -1237,7 +1234,6 @@ layout: null
             <li><span>A <b class="r">53-minute</b> offline pass before the win starts</span></li>
             <li><span>The pathdb journal must be dropped afterwards, or in-memory layers disagree with disk</span></li>
             <li><span>Height is a real trade: deeper subtrees archive more, resurrect slower</span></li>
-            <li><span>Naming is already contested — review suggests <b>geth trie compress</b>, since this is offline compression, not "archive mode"</span></li>
         </ul>
     </div>
     <div class="stamp">05 · Numbers</div>
