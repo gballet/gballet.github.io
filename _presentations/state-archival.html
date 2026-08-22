@@ -388,10 +388,8 @@ layout: null
     }
     .code pre { font-size: var(--code-size); line-height: 1.65; white-space: pre; overflow: hidden; }
     .code .c { color: var(--mute); }               /* comment */
-    .code .k { color: #ff7b72; }                   /* keyword */
     .code .t { color: var(--amber); }              /* type */
     .code .s { color: var(--green); }              /* string / literal */
-    .code .f { color: #79c0ff; }                   /* function / flag */
     .code .del { color: var(--red); }              /* the "before" line */
     .code-caption { font-size: var(--small-size); color: var(--mute); }
 
@@ -481,40 +479,6 @@ layout: null
     .col.ask h3 { color: var(--amber); }
     .col .bullet-list li { font-size: var(--body-size); }
 
-    /* === BAR CHART (CSS-only) ================================= */
-    .chart { display: flex; flex-direction: column; gap: clamp(0.35rem, 1vh, 0.85rem); }
-    /* label | twin bars | figures — baseline and archival are stacked, never
-       overlaid, so the comparison is actually visible. */
-    .bar-row {
-        display: grid;
-        grid-template-columns: clamp(74px, 11vw, 140px) 1fr clamp(96px, 13vw, 160px);
-        align-items: center;
-        gap: clamp(0.4rem, 1vw, 0.9rem);
-    }
-    .bar-row .bar-label { font-size: var(--small-size); color: var(--mute); white-space: nowrap; }
-    .bar-track { display: flex; flex-direction: column; gap: clamp(2px, 0.35vh, 4px); }
-    .bar { position: relative; height: clamp(8px, 1.7vh, 15px); background: rgba(201, 209, 217, 0.06); }
-    .bar > i {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        transform-origin: left;
-        transform: scaleX(0);
-        transition: transform 1s var(--ease);
-    }
-    .bar.base > i { background: rgba(201, 209, 217, 0.3); }
-    .bar.arch > i { background: linear-gradient(90deg, var(--green-dim), var(--green)); box-shadow: 0 0 12px rgba(57, 211, 83, 0.3); }
-    .slide.visible .bar.base > i { transform: scaleX(1); transition-delay: 0.15s; }
-    .slide.visible .bar.arch > i { transform: scaleX(1); transition-delay: 0.4s; }
-    .bar-figs { font-size: var(--small-size); color: var(--mute); text-align: right; white-space: nowrap; }
-    .bar-figs b { color: var(--green); font-weight: 700; }
-    .bar-figs em { font-style: normal; color: var(--text-hi); }
-    .legend { display: flex; gap: clamp(0.6rem, 1.6vw, 1.4rem); font-size: var(--small-size); color: var(--mute); flex-wrap: wrap; }
-    .legend i { display: inline-block; width: 0.8em; height: 0.8em; margin-right: 0.4em; }
-    .legend i.base { background: rgba(201, 209, 217, 0.3); }
-    .legend i.arch { background: var(--green); }
-
     /* === DIAGRAMS (inline SVG) ================================ */
     .diagram { width: 100%; max-height: min(46vh, 380px); }
     .diagram.compact { max-height: min(33vh, 250px); }
@@ -542,6 +506,12 @@ layout: null
     .diagram .stub { fill: rgba(248, 81, 73, 0.08); stroke: var(--red); stroke-width: 1.5; stroke-dasharray: 5 4; }
     .diagram .file { fill: rgba(57, 211, 83, 0.07); stroke: var(--green-dim); stroke-width: 1.5; }
     .diagram .gone { fill: none; stroke: var(--red); stroke-width: 2; }
+    .diagram .gone-box { fill: rgba(248, 81, 73, 0.05); stroke: rgba(248, 81, 73, 0.55); stroke-width: 1.3; stroke-dasharray: 3 4; }
+    .diagram .gone-link { stroke: rgba(248, 81, 73, 0.55); stroke-width: 1.3; stroke-dasharray: 3 4; fill: none; }
+    .diagram .edge-s { stroke: rgba(201, 209, 217, 0.55); stroke-width: 1.8; fill: none; }
+    .diagram .rec { fill: rgba(57, 211, 83, 0.08); stroke: var(--green-dim); stroke-width: 1.2; }
+    .diagram .ser { stroke: var(--green); stroke-width: 1.2; fill: none; opacity: 0.8; stroke-dasharray: 5 4; }
+    .diagram .dashed { stroke-dasharray: 5 4; }
     .diagram .flow { stroke: var(--amber); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
     .diagram .dash-anim { stroke-dasharray: 6 5; animation: march 1.6s linear infinite; }
     /* chart primitives for the depth-vs-size plot */
@@ -670,7 +640,6 @@ layout: null
         .reveal { opacity: 1; transform: none; }
         .reveal-rule { transform: none; }
         .statemap i.hot, .cursor, .dash-anim { animation: none; }
-        .bar > i { transform: scaleX(1); }
     }
 
     /* === INLINE EDITING ======================================
@@ -833,15 +802,20 @@ layout: null
             <!-- CSS/SVG diagram: height-3 subtree lifted out of the DB into the archive file.
                  To replace with a bitmap later, add <img src="assets/swap.png" alt="..."> here;
                  the .figure:has(img) rule hides any placeholder automatically. -->
-            <svg class="diagram" viewBox="0 0 760 250" role="img" aria-label="A height-3 subtree, four levels deep, is removed from the database and written to the archive file. Its parent keeps the subtree root hash and points at a stub node holding an offset and a size.">
+            <svg class="diagram" viewBox="0 0 760 250" role="img" aria-label="A height-3 subtree in the database. The subtree root is replaced by a 17-byte expiredNode holding an offset and a size. Each leaf is serialized and appended sequentially to the archive file, shown by one arrow per leaf pointing to its record. The internal nodes between root and leaves are not stored anywhere.">
                 <defs>
                     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                         <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
                     </marker>
+                    <marker id="arrow-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#39d353"></path>
+                    </marker>
                 </defs>
 
                 <!-- BEFORE: the subtree as it lives in the DB, with a height scale
-                     measured from the leaves (leaves = 0), matching archiver.go. -->
+                     measured from the leaves (leaves = 0), matching archiver.go.
+                     Only the root is green: it is the one node that gets a
+                     replacement in the DB. -->
                 <text class="lbl" x="10" y="18">BEFORE · all in the DB</text>
                 <g class="level">
                     <path d="M34 64 H300 M34 112 H300 M34 160 H300 M34 211 H300"></path>
@@ -857,8 +831,8 @@ layout: null
                 <path class="edge" d="M128 121 L106 152 M128 121 L150 152 M212 121 L192 152 M212 121 L234 152"></path>
                 <path class="edge" d="M106 167 V202 M150 167 V202 M192 167 V202 M234 167 V202"></path>
                 <circle class="nd-g" cx="170" cy="64" r="11"></circle>
-                <circle class="nd-g" cx="128" cy="112" r="9"></circle>
-                <circle class="nd-g" cx="212" cy="112" r="9"></circle>
+                <circle class="nd" cx="128" cy="112" r="9"></circle>
+                <circle class="nd" cx="212" cy="112" r="9"></circle>
                 <circle class="nd" cx="106" cy="160" r="7"></circle>
                 <circle class="nd" cx="150" cy="160" r="7"></circle>
                 <circle class="nd" cx="192" cy="160" r="7"></circle>
@@ -869,44 +843,41 @@ layout: null
                 <rect class="leaf" x="227" y="204" width="14" height="14"></rect>
                 <text class="lbl-g" x="168" y="242" text-anchor="middle">one height-3 subtree</text>
 
-                <!-- FLOW -->
-                <path class="flow dash-anim" d="M302 130 L372 130"></path>
-                <text class="lbl" x="337" y="118" text-anchor="middle">archive</text>
+                <!-- 1. the ROOT is replaced in the DB by a 17-byte stub -->
+                <text class="lbl" x="490" y="28">AFTER · in the DB</text>
+                <rect class="stub" x="490" y="36" width="200" height="44" rx="3"></rect>
+                <text class="lbl" x="590" y="54" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <text class="lbl" x="590" y="70" text-anchor="middle">offset + size · 17 B</text>
+                <path class="flow dashed" d="M184 62 L484 58"></path>
+                <text class="tiny-a" x="330" y="50" text-anchor="middle">the root is replaced</text>
 
-                <!-- AFTER: parent keeps the hash, child becomes a 17-byte stub -->
-                <text class="lbl" x="392" y="18">AFTER · stub + flat file</text>
-                <text class="lbl" x="450" y="46" text-anchor="middle">parent keeps the hash</text>
-                <path class="edge dash-anim" d="M450 24 L450 52"></path>
-                <circle class="nd" cx="450" cy="70" r="11"></circle>
-                <path class="edge-g" d="M461 78 L520 100"></path>
-                <rect class="stub" x="508" y="84" width="176" height="44" rx="3"></rect>
-                <text class="lbl" x="595" y="103" text-anchor="middle" style="fill:#f85149">expiredNode</text>
-                <text class="lbl" x="596" y="119" text-anchor="middle">offset + size · 17 B</text>
-                <path class="flow" d="M595 132 L595 162"></path>
-                <rect class="file" x="505" y="166" width="190" height="62" rx="3"></rect>
-                <text class="lbl-g" x="600" y="186" text-anchor="middle">geth/nodearchive</text>
-                <path class="edge-g" d="M520 200 H680 M520 210 H655 M520 220 H672"></path>
-                <text class="lbl" x="600" y="244" text-anchor="middle">leaf records, appended</text>
+                <!-- 2. each LEAF is serialized and appended to ONE FLAT FILE:
+                     a single horizontal strip of consecutive records -->
+                <text class="lbl-g" x="585" y="146" text-anchor="middle">geth/nodearchive · one flat file</text>
+                <rect class="file" x="420" y="152" width="330" height="36" rx="3"></rect>
+                <rect class="rec" x="432" y="158" width="70" height="24"></rect>
+                <rect class="rec" x="510" y="158" width="70" height="24"></rect>
+                <rect class="rec" x="588" y="158" width="70" height="24"></rect>
+                <rect class="rec" x="666" y="158" width="70" height="24"></rect>
+                <text class="tiny-g" x="467" y="174" text-anchor="middle">leaf 1</text>
+                <text class="tiny-g" x="545" y="174" text-anchor="middle">leaf 2</text>
+                <text class="tiny-g" x="623" y="174" text-anchor="middle">leaf 3</text>
+                <text class="tiny-g" x="701" y="174" text-anchor="middle">leaf 4</text>
+                <path class="ser" d="M115 209 L463 186" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M159 209 L541 186" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M201 209 L619 186" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M243 209 L697 186" marker-end="url(#arrow-g)"></path>
+                <text class="tiny-g" x="585" y="240" text-anchor="middle">appended in byte order, left to right</text>
+
+                <!-- 3. the INTERNAL nodes go nowhere -->
+                <path class="gone-link" d="M221 112 L308 104"></path>
+                <path class="gone-link" d="M243 160 L308 122"></path>
+                <rect class="gone-box" x="310" y="86" width="160" height="44" rx="3"></rect>
+                <text class="tiny" x="390" y="104" text-anchor="middle" style="fill:#f85149">internal nodes</text>
+                <text class="tiny" x="390" y="120" text-anchor="middle" style="fill:#f85149">not stored ×</text>
             </svg>
-            <figcaption>Height is counted from the leaves: leaves are 0, so a height-3 node has four levels under its own hash. The DB keeps that hash; everything below it becomes bytes in one append-only file.</figcaption>
+            <figcaption>Height is counted from the leaves: leaves are 0, so a height-3 node has four levels under its own hash. The root becomes a 17-byte stub in the DB, the leaves become consecutive records in one flat, append-only file — and the internal nodes between them are not stored at all.</figcaption>
         </figure>
-    </div>
-    <div class="stamp">03 · Method</div>
-</section>
-
-<section class="slide">
-    <div class="slide-content">
-        <h2 class="reveal" style="--i:0">The replacement is <em>17 bytes</em></h2>
-        <div class="code reveal" style="--i:1">
-<pre>
-<span class="k">type</span> <span class="t">expiredNode</span> <span class="k">struct</span> {
-    offset          <span class="t">uint64</span> <span class="c">// where the leaves live</span>
-    size            <span class="t">uint64</span> <span class="c">// how many bytes to read</span>
-    cachedHash      <span class="t">hashNode</span> <span class="c">// subtree root: consensus unchanged</span>
-    archiveResolver archive.<span class="t">ResolverFn</span>
-}</pre>
-        </div>
-        <p class="code-caption reveal" style="--i:2">In db: <b class="g">1</b> marker byte + <b class="g">8</b> offset + <b class="g">8</b> size. A whole subtree collapses to that.</p>
     </div>
     <div class="stamp">03 · Method</div>
 </section>
@@ -916,7 +887,7 @@ layout: null
         <div class="kicker reveal" style="--i:0">read path vs write path</div>
         <h2 class="reveal" style="--i:1">Reads don't hash — <em>writes</em> do</h2>
         <figure class="figure reveal" style="--i:2">
-            <svg class="diagram compact" viewBox="0 0 780 212" role="img" aria-label="On the read path, the stub resolves to archive records that are loaded into memory and the requested value is returned, with no hashing. On the write path, only the nodes on the path from the written leaf up to the subtree root are re-hashed and persisted; untouched sibling subtrees are re-archived as new expired nodes with updated offsets and sizes, and the existing archive records stay valid.">
+            <svg class="diagram compact" viewBox="0 0 780 235" role="img" aria-label="On the read path, the stub resolves to archive records that are loaded into memory and the requested value is returned, with no hashing. On the write path, the write hits an expiredNode stub, the leaf records are read back from the archive, one value is updated, and the whole subtree is rebuilt, re-hashed and reinserted into the database. The archive itself is only read.">
                 <defs>
                     <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                         <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
@@ -934,50 +905,63 @@ layout: null
                 <path class="flow" d="M172 122 L208 122" marker-end="url(#arrow3)"></path>
                 <rect class="leaf-w" x="212" y="106" width="58" height="32" rx="3"></rect>
                 <text class="tiny" x="241" y="126" text-anchor="middle" style="fill:#04140a;font-weight:700">value</text>
-                <text class="tiny" x="12" y="170">one seek · records into memory · read the leaf you want</text>
+                <text class="tiny" x="12" y="170">one seek · records into memory</text>
+                <text class="tiny" x="12" y="186">read the leaf you want</text>
 
-                <path class="split" d="M320 18 V186"></path>
+                <path class="split" d="M336 18 V192"></path>
 
-                <!-- WRITE: only the path is re-hashed; siblings become fresh stubs. -->
-                <text class="lbl-a" x="348" y="16">WRITE · re-hash the path only</text>
-                <circle class="nd-a" cx="430" cy="44" r="10"></circle>
-                <text class="tiny" x="412" y="48" text-anchor="end">subtree root</text>
-                <path class="edge-a" d="M423 52 L400 84"></path>
-                <circle class="nd-a" cx="394" cy="92" r="9"></circle>
-                <path class="edge-a" d="M388 100 L376 132"></path>
-                <rect class="leaf-w" x="366" y="134" width="18" height="18" rx="2"></rect>
-                <text class="tiny" x="375" y="166" text-anchor="middle">written</text>
-                <!-- sibling internal nodes: re-archived, not rebuilt -->
-                <path class="edge" d="M440 42 L456 40"></path>
-                <rect class="stub" x="458" y="26" width="112" height="28" rx="3"></rect>
-                <text class="tiny" x="514" y="44" text-anchor="middle">offset + size</text>
-                <path class="edge" d="M403 96 L420 108"></path>
-                <rect class="stub" x="422" y="96" width="112" height="28" rx="3"></rect>
-                <text class="tiny" x="478" y="114" text-anchor="middle">offset + size</text>
-                <path class="flow dash-anim" d="M574 44 L618 74" marker-end="url(#arrow3)"></path>
-                <path class="flow dash-anim" d="M538 112 L616 106" marker-end="url(#arrow3)"></path>
-                <rect class="file" x="620" y="78" width="150" height="52" rx="3"></rect>
-                <text class="lbl-g" x="695" y="98" text-anchor="middle">nodearchive</text>
-                <path class="edge-g" d="M634 108 H756 M634 116 H736 M634 124 H750"></path>
-                <text class="tiny" x="695" y="146" text-anchor="middle">records untouched, still valid</text>
+                <!-- WRITE: hit the stub, read the leaves back, update one value,
+                     rebuild and reinsert the whole subtree. -->
+                <text class="lbl-a" x="348" y="16">WRITE · resurrect, update, reinsert</text>
+
+                <text class="tiny" x="414" y="34" text-anchor="middle">1 · write hits a stub</text>
+                <rect class="stub" x="352" y="40" width="120" height="34" rx="3"></rect>
+                <text class="lbl" x="412" y="61" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <path class="flow" d="M412 78 L412 104" marker-end="url(#arrow3)"></path>
+                <rect class="file" x="352" y="108" width="120" height="44" rx="3"></rect>
+                <text class="lbl-g" x="412" y="126" text-anchor="middle">nodearchive</text>
+                <path class="edge-g" d="M364 134 H460 M364 142 H444"></path>
+                <text class="tiny" x="412" y="168" text-anchor="middle">2 · leaves read back</text>
+
+                <path class="flow" d="M476 130 L504 130" marker-end="url(#arrow3)"></path>
+                <text class="tiny" x="563" y="106" text-anchor="middle">3 · one value updated</text>
+                <rect class="leaf" x="512" y="117" width="26" height="26" rx="2"></rect>
+                <rect class="leaf-w" x="546" y="117" width="26" height="26" rx="2"></rect>
+                <rect class="leaf" x="580" y="117" width="26" height="26" rx="2"></rect>
+                <rect class="leaf" x="614" y="117" width="26" height="26" rx="2"></rect>
+
+                <path class="flow" d="M648 124 L674 106" marker-end="url(#arrow3)"></path>
+                <text class="tiny" x="716" y="28" text-anchor="middle">back into the DB</text>
+                <path class="flow dash-anim" d="M716 50 L716 36" marker-end="url(#arrow3)"></path>
+                <circle class="nd-a" cx="716" cy="60" r="8"></circle>
+                <path class="edge-a" d="M710 67 L698 85 M722 67 L734 85"></path>
+                <circle class="nd-a" cx="694" cy="92" r="6"></circle>
+                <circle class="nd-a" cx="738" cy="92" r="6"></circle>
+                <path class="edge-a" d="M690 98 L686 114 M698 97 L708 114 M734 98 L730 114 M742 97 L750 114"></path>
+                <rect class="leaf" x="682" y="116" width="12" height="12"></rect>
+                <rect class="leaf-w" x="704" y="116" width="12" height="12"></rect>
+                <rect class="leaf" x="726" y="116" width="12" height="12"></rect>
+                <rect class="leaf" x="748" y="116" width="12" height="12"></rect>
+                <text class="tiny" x="700" y="158" text-anchor="middle">4 · whole subtree</text>
+                <text class="tiny" x="700" y="174" text-anchor="middle">re-hashed, reinserted</text>
 
                 <!-- legend -->
-                <circle class="nd-a" cx="24" cy="197" r="5"></circle>
-                <text class="tiny" x="36" y="201">re-hashed &amp; re-persisted</text>
-                <rect class="stub" x="212" y="192" width="12" height="10"></rect>
-                <text class="tiny" x="230" y="201">expiredNode · offset+size rewritten</text>
-                <rect class="leaf-w" x="472" y="192" width="10" height="10"></rect>
-                <text class="tiny" x="488" y="201">written leaf</text>
-                <rect class="file" x="574" y="192" width="14" height="10"></rect>
-                <text class="tiny" x="594" y="201">archive, never invalidated</text>
+                <circle class="nd-a" cx="24" cy="214" r="5"></circle>
+                <text class="tiny" x="36" y="218">re-hashed subtree</text>
+                <rect class="stub" x="200" y="206" width="12" height="10"></rect>
+                <text class="tiny" x="218" y="218">expiredNode stub</text>
+                <rect class="leaf-w" x="390" y="206" width="10" height="10"></rect>
+                <text class="tiny" x="406" y="218">updated leaf</text>
+                <rect class="file" x="540" y="206" width="14" height="10"></rect>
+                <text class="tiny" x="560" y="218">archive, read-only</text>
             </svg>
         </figure>
         <ul class="bullet-list tight reveal" style="--i:3">
             <li><span><b>Read:</b> load the records at <b>(offset, size)</b> into memory, return the leaf you asked for — <b class="g">zero hashes</b></span></li>
-            <li><span><b>Write:</b> the new value invalidates the hashes above it, so <b class="a">that path</b> is rebuilt and re-persisted</span></li>
-            <li><span>Untouched siblings never come back as nodes — they become new <b>expiredNodes</b>, offset and size rewritten</span></li>
+            <li><span><b>Write:</b> hits the stub and resurrects it — leaves come back from the archive, one value changes, and the <b class="a">whole subtree</b> is re-hashed and reinserted</span></li>
+            <li><span>The archive is <b>read-only</b> throughout: resurrection reads it, nothing ever rewrites it</span></li>
         </ul>
-        <p class="note reveal" style="--i:4">A write costs one path, not one subtree, and nothing already in the archive is invalidated. Re-hashing cost is what grows with subtree height — that's the real reason height 3 is the sweet spot.</p>
+        <p class="note reveal" style="--i:4">Re-hashing is the write's real cost, and it grows with subtree height — a height-3 rebuild is a handful of nodes, deeper subtrees snowball. That's why height 3 is the sweet spot.</p>
     </div>
     <div class="stamp">03 · Method</div>
 </section>
@@ -1120,63 +1104,6 @@ layout: null
     <div class="stamp">05 · Numbers</div>
 </section>
 
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">hoodi · per block range</div>
-        <h2 class="reveal" style="--i:1">Faster in <em>every</em> range, not on average</h2>
-        <!-- Bars scaled against a 380 Mgas/s ceiling: width = value / 380.
-             Baseline sits above archival in each row so both are readable. -->
-        <div class="chart reveal" style="--i:2">
-            <div class="bar-row">
-                <span class="bar-label">1.30M–1.39M</span>
-                <div class="bar-track">
-                    <div class="bar base"><i style="width:64.2%"></i></div>
-                    <div class="bar arch"><i style="width:77.9%"></i></div>
-                </div>
-                <span class="bar-figs">244 → <b>296</b> <em>+21%</em></span>
-            </div>
-            <div class="bar-row">
-                <span class="bar-label">1.40M–1.47M</span>
-                <div class="bar-track">
-                    <div class="bar base"><i style="width:63.9%"></i></div>
-                    <div class="bar arch"><i style="width:78.9%"></i></div>
-                </div>
-                <span class="bar-figs">243 → <b>300</b> <em>+24%</em></span>
-            </div>
-            <div class="bar-row">
-                <span class="bar-label">1.50M–1.59M</span>
-                <div class="bar-track">
-                    <div class="bar base"><i style="width:61.6%"></i></div>
-                    <div class="bar arch"><i style="width:76.8%"></i></div>
-                </div>
-                <span class="bar-figs">234 → <b>292</b> <em>+25%</em></span>
-            </div>
-            <div class="bar-row">
-                <span class="bar-label">1.70M–1.79M</span>
-                <div class="bar-track">
-                    <div class="bar base"><i style="width:72.9%"></i></div>
-                    <div class="bar arch"><i style="width:90.5%"></i></div>
-                </div>
-                <span class="bar-figs">277 → <b>344</b> <em>+24%</em></span>
-            </div>
-            <div class="bar-row">
-                <span class="bar-label">2.00M–2.09M</span>
-                <div class="bar-track">
-                    <div class="bar base"><i style="width:75.5%"></i></div>
-                    <div class="bar arch"><i style="width:91.1%"></i></div>
-                </div>
-                <span class="bar-figs">287 → <b>346</b> <em>+21%</em></span>
-            </div>
-        </div>
-        <div class="legend reveal" style="--i:3">
-            <span><i class="base"></i>baseline</span>
-            <span><i class="arch"></i>archival · Mgas/s</span>
-            <span>spread across all ranges: <b class="g">+17% … +25%</b></span>
-        </div>
-    </div>
-    <div class="stamp">05 · Numbers</div>
-</section>
-
 <!-- =============================================================
      MAINNET RESULTS — the numbers that matter, and they disagree
      with hoodi. The next slide explains why.
@@ -1196,11 +1123,16 @@ layout: null
             </div>
             <div class="stat">
                 <div class="label">Block import speed</div>
-                <div class="value">−1%</div>
+                <div class="value">−0.5%</div>
                 <div class="delta down">slower, barely measurable</div>
             </div>
+            <div class="stat">
+                <div class="label">Archive file</div>
+                <div class="value">98 GB</div>
+                <div class="delta plain">≈ 1/3 of the state in the DB</div>
+            </div>
         </div>
-        <p class="note reveal" style="--i:3">Hoodi bought <b class="g">17.5%</b> of its import time. Mainnet buys almost nothing in speed and a quarter of the disk. Same code, same subtree height, opposite headline — that is not noise, and the next slide is the reason.</p>
+        <p class="note reveal" style="--i:3">Hoodi bought <b class="g">17.5%</b> of its import time; mainnet buys disk instead — that is not noise, and the next slide is the reason. Note the archive is stored <b class="a">raw</b>: the database compresses its pages, the archive file does not, so there is more size optimisation still on the table.</p>
     </div>
     <div class="stamp">05 · Numbers</div>
 </section>
@@ -1497,8 +1429,7 @@ class InlineEditor {
         this.targets = Array.from(document.querySelectorAll(
             '.slide h1, .slide h2, .slide h3, .slide p, .slide li span, .slide .tag, ' +
             '.slide .kicker, .slide figcaption, .slide .stat .label, .slide .stat .value, ' +
-            '.slide .stat .delta, .slide .stamp, .slide .bar-label, ' +
-            '.slide .bar-figs'
+            '.slide .stat .delta, .slide .stamp'
         ));
 
         /* Keys are content-addressed, NOT positional.
