@@ -397,6 +397,11 @@ layout: null
     .stat .label { font-size: var(--small-size); letter-spacing: 0.12em; color: var(--mute); text-transform: uppercase; }
     .stat .value { font-size: var(--stat-size); font-weight: 800; letter-spacing: -0.02em; color: var(--text-hi); line-height: 1.15; }
     .stat .delta { font-size: var(--small-size); font-weight: 700; }
+    /* the headline on a stat card is the CHANGE, so it carries the colour;
+       the raw before/after figures sit small underneath */
+    .stat .value.up { color: var(--green); }
+    .stat .value.down { color: var(--amber); }
+    .stat .delta.plain { color: var(--mute); font-weight: 500; }
     .stat .delta.up { color: var(--green); }
     .stat .delta.down { color: var(--amber); }
     .stat.hot { border-top-color: var(--green); box-shadow: 0 0 clamp(10px, 2vw, 26px) rgba(57, 211, 83, 0.12) inset; }
@@ -496,7 +501,11 @@ layout: null
     /* === DIAGRAMS (inline SVG) ================================ */
     .diagram { width: 100%; max-height: min(46vh, 380px); }
     .diagram.compact { max-height: min(33vh, 250px); }
-    .diagram .tiny { font-size: 10px; fill: var(--mute); }
+    /* the depth-vs-size plot carries small labels, so it gets more height:
+       at 42vh the 760-unit viewBox renders ~1:1 and 12px labels stay legible */
+    .diagram.plot { max-height: min(42vh, 330px); }
+    .diagram .tiny-g, .diagram .tiny-a { font-size: 12px; font-weight: 700; }
+    .diagram .tiny { font-size: 12px; fill: var(--mute); }
     .diagram .lbl-a { font-size: 13px; fill: var(--amber); font-weight: 700; }
     .diagram text { font-family: var(--font); fill: var(--text); }
     .diagram .lbl { font-size: 13px; fill: var(--mute); }
@@ -518,20 +527,19 @@ layout: null
     .diagram .gone { fill: none; stroke: var(--red); stroke-width: 2; }
     .diagram .flow { stroke: var(--amber); stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
     .diagram .dash-anim { stroke-dasharray: 6 5; animation: march 1.6s linear infinite; }
+    /* chart primitives for the depth-vs-size plot */
+    .diagram .axis { stroke: var(--mute); stroke-width: 1.4; fill: none; }
+    .diagram .curve { stroke: var(--green); stroke-width: 2.4; fill: none; stroke-linejoin: round; }
+    .diagram .curve-faint { stroke: rgba(201, 209, 217, 0.28); stroke-width: 1.4; fill: none; stroke-dasharray: 4 4; }
+    .diagram .riser { stroke: var(--amber); stroke-width: 1.3; stroke-dasharray: 4 5; fill: none; }
+    .diagram .pt { fill: var(--bg); stroke: var(--text); stroke-width: 2; }
+    .diagram .pt-g { fill: var(--green); stroke: #04140a; stroke-width: 1.5; }
+    .diagram .pt-a { fill: var(--amber); stroke: #1a1300; stroke-width: 1.5; }
+    .diagram .delta { stroke: var(--green); stroke-width: 2; fill: none; }
+    .diagram .delta-flat { stroke: var(--amber); stroke-width: 2; fill: none; stroke-dasharray: 3 3; }
+    .diagram .tiny-g { font-size: 10px; fill: var(--green); font-weight: 700; }
+    .diagram .tiny-a { font-size: 10px; fill: var(--amber); font-weight: 700; }
     @keyframes march { to { stroke-dashoffset: -22; } }
-
-    /* === CALLOUT (the speech beat) ============================ */
-    .callout {
-        border-left: 3px solid var(--amber);
-        background: rgba(227, 179, 65, 0.07);
-        padding: clamp(0.6rem, 1.6vw, 1.3rem) clamp(0.7rem, 1.8vw, 1.6rem);
-        font-size: clamp(0.85rem, 2vw, 1.5rem);
-        font-weight: 500;
-        line-height: 1.4;
-        color: var(--text-hi);
-        max-width: 60ch;
-    }
-    .callout b { color: var(--amber); }
 
     /* === FIGURE SLOT ==========================================
        Image-ready: drop <img src="assets/foo.png" alt="..."> inside
@@ -1068,51 +1076,40 @@ layout: null
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 5 · hoodi · 1,198,413 blocks imported twice</div>
-        <h2 class="reveal" style="--i:1">Baseline vs archival</h2>
+        <div class="tags reveal" style="--i:0">
+            <span class="tag amber">HOODI TESTNET</span>
+            <span class="tag plain">1,198,413 blocks · imported twice</span>
+        </div>
+        <h2 class="reveal" style="--i:1">Baseline vs <em>archival</em></h2>
         <div class="stats three reveal" style="--i:2">
             <div class="stat hot">
-                <div class="label">Total import time</div>
-                <div class="value">32h 00m</div>
-                <div class="delta up">−17.5% vs 38h 47m</div>
+                <div class="label">Import time</div>
+                <div class="value up">−17.5%</div>
+                <div class="delta plain">38h 47m → 32h 00m</div>
             </div>
             <div class="stat hot">
                 <div class="label">Throughput</div>
-                <div class="value">320.9 <span style="font-size:0.5em">Mgas/s</span></div>
-                <div class="delta up">+21.3% vs 264.5</div>
+                <div class="value up">+21.3%</div>
+                <div class="delta plain">264.5 → 320.9 Mgas/s</div>
             </div>
             <div class="stat">
                 <div class="label">Chaindata</div>
-                <div class="value">86 GB</div>
-                <div class="delta down">+2 GB vs 84 GB</div>
-            </div>
-            <div class="stat">
-                <div class="label">Archive file</div>
-                <div class="value">2.1 MB</div>
-                <div class="delta down">one flat file</div>
-            </div>
-            <div class="stat">
-                <div class="label">Generate, once</div>
-                <div class="value">53 min</div>
-                <div class="delta down">repaid 7.7×</div>
-            </div>
-            <div class="stat">
-                <div class="label">Resurrections</div>
-                <div class="value">4,111</div>
-                <div class="delta up">all resolved</div>
+                <div class="value down">+2.4%</div>
+                <div class="delta plain">84 GB → 86 GB</div>
             </div>
         </div>
-        <p class="note reveal" style="--i:3">Hetzner dedicated, 12 cores / 22 GB / SSD. Blocks 1,217,349 → 2,415,761 replayed on identical snapshots.</p>
+        <p class="note reveal" style="--i:3">Hetzner dedicated, 12 cores / 22 GB RAM / 1TB SSD. Blocks 1,217,349 → 2,415,761 replayed on identical snapshots.</p>
     </div>
     <div class="stamp">05 · Numbers</div>
 </section>
 
 <section class="slide">
     <div class="slide-content">
-        <h2 class="reveal" style="--i:0">Faster in <em>every</em> range, not on average</h2>
+        <div class="kicker reveal" style="--i:0">hoodi · per block range</div>
+        <h2 class="reveal" style="--i:1">Faster in <em>every</em> range, not on average</h2>
         <!-- Bars scaled against a 380 Mgas/s ceiling: width = value / 380.
              Baseline sits above archival in each row so both are readable. -->
-        <div class="chart reveal" style="--i:1">
+        <div class="chart reveal" style="--i:2">
             <div class="bar-row">
                 <span class="bar-label">1.30M–1.39M</span>
                 <div class="bar-track">
@@ -1154,7 +1151,7 @@ layout: null
                 <span class="bar-figs">287 → <b>346</b> <em>+21%</em></span>
             </div>
         </div>
-        <div class="legend reveal" style="--i:2">
+        <div class="legend reveal" style="--i:3">
             <span><i class="base"></i>baseline</span>
             <span><i class="arch"></i>archival · Mgas/s</span>
             <span>spread across all ranges: <b class="g">+17% … +25%</b></span>
@@ -1164,35 +1161,99 @@ layout: null
 </section>
 
 <!-- =============================================================
-     RESERVED FIGURE SLOT — measurements still being gathered.
-     Drop the plot in as:
-       <img src="assets/state-archival-perf.png" alt="...">
-     inside the .figure below; the dashed placeholder hides itself.
+     MAINNET RESULTS — the numbers that matter, and they disagree
+     with hoodi. The next slide explains why.
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <h2 class="reveal" style="--i:0">Fresh numbers, landing before the talk</h2>
-        <figure class="figure reveal" style="--i:1">
-            <div class="figure-slot">
-                <div class="slot-title">FIGURE SLOT · reserved</div>
-                <p class="slot-hint">Benchmark run in progress. Drop the plot in as <b class="g">assets/state-archival-perf.png</b> and this placeholder disappears — no other edit needed, sizing is already capped to the viewport.</p>
+        <div class="tags reveal" style="--i:0">
+            <span class="tag amber">ETHEREUM MAINNET</span>
+            <span class="tag plain">same command, same flags</span>
+        </div>
+        <h2 class="reveal" style="--i:1">A quarter of the disk, for <em>free</em></h2>
+        <div class="stats three reveal" style="--i:2">
+            <div class="stat hot">
+                <div class="label">Database size</div>
+                <div class="value">−27%</div>
+                <div class="delta up">after one archival pass</div>
             </div>
-            <figcaption>Read latency, write latency and DB size over time — baseline vs archival.</figcaption>
-        </figure>
+            <div class="stat">
+                <div class="label">Block import speed</div>
+                <div class="value">−1%</div>
+                <div class="delta down">slower, barely measurable</div>
+            </div>
+            <div class="stat">
+                <div class="label">The trade</div>
+                <div class="value">27 : 1</div>
+                <div class="delta up">size won per % of speed</div>
+            </div>
+        </div>
+        <p class="note reveal" style="--i:3">Hoodi bought <b class="g">17.5%</b> of its import time. Mainnet buys almost nothing in speed and a quarter of the disk. Same code, same subtree height, opposite headline — that is not noise, and the next slide is the reason.</p>
     </div>
     <div class="stamp">05 · Numbers</div>
 </section>
 
+<!-- =============================================================
+     WHY THE TWO RUNS DISAGREE — the database keeps our trie inside
+     its own tree, so cost tracks a logarithm of the DB size.
+     Chart geometry (staircase + point positions) is computed, not
+     eyeballed: risers at each added level, hoodi straddling one,
+     mainnet sitting mid-plateau.
+     ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">honest ledger</div>
-        <h2 class="reveal" style="--i:1">What it costs</h2>
-        <hr class="rule reveal-rule" style="--i:2">
-        <ul class="bullet-list cost reveal" style="--i:3">
-            <li><span><b class="r">+2 GB</b> chaindata in the benchmark — the archive itself is 2.1 MB, the rest is layout churn</span></li>
-            <li><span>A <b class="r">53-minute</b> offline pass before the win starts</span></li>
-            <li><span>The pathdb journal must be dropped afterwards, or in-memory layers disagree with disk</span></li>
-            <li><span>Height is a real trade: deeper subtrees archive more, resurrect slower</span></li>
+        <div class="kicker reveal" style="--i:0">part 5 · why they disagree</div>
+        <h2 class="reveal" style="--i:1">Treeception: our tree lives in <em>its</em> tree</h2>
+        <figure class="figure reveal" style="--i:2">
+            <svg class="diagram plot" viewBox="0 0 760 300" role="img" aria-label="Database cost against database size. The curve is logarithmic: it rises in discrete steps as the internal database tree gains a level, steeply at small sizes and almost flat once the database is large. Archived hoodi sits one level below plain hoodi, a visible win. Archived mainnet and plain mainnet sit on the same plateau, so archiving 27 percent of the data barely changes cost. A future mainnet past roughly 5 terabytes sits two levels higher, where the same archival becomes worth much more.">
+                <defs>
+                    <marker id="axis-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#6e7681"></path>
+                    </marker>
+                </defs>
+
+                <!-- axes -->
+                <path class="axis" d="M86 250 H716" marker-end="url(#axis-a)"></path>
+                <path class="axis" d="M86 250 V46" marker-end="url(#axis-a)"></path>
+                <text class="tiny" x="706" y="272" text-anchor="end">database size →</text>
+                <text class="tiny" x="72" y="248" transform="rotate(-90 72 248)">tree depth · cost per access →</text>
+
+                <!-- idealised logarithmic profile -->
+                <polyline class="curve-faint" points="86 225 92 210 98 195 105 184 111 175 117 168 123 162 129 157 136 152 142 148 148 144 154 141 160 137 167 134 173 132 179 129 185 127 191 124 198 122 204 120 210 118 216 116 223 114 229 113 235 111 241 109 247 108 254 106 260 105 266 104 272 102 278 101 285 100 291 99 297 98 303 97 310 96 316 95 322 94 328 93 334 92 341 91 347 90 353 89 359 88 366 87 372 87 378 86 384 85 390 84 397 84 403 83 409 82 415 82 421 81 428 80 434 80 440 79 446 78 452 78 459 77 465 77 471 76 477 75 484 75 490 74 496 74 502 73 508 73 515 72 521 72 527 71 533 71 539 70 546 70 552 69 558 69 564 68 570 68 577 67 583 67 589 66 595 66 601 66 608 65 614 65 620 64 626 64 632 64 639 63 645 63 651 62 657 62 663 62 670 61 676 61 682 61 688 60 694 60 701 60 707 59"></polyline>
+                <!-- what it actually is: one more level at a time -->
+                <polyline class="curve" points="86 236 98 236 98 200 123 200 123 164 198 164 198 128 396 128 396 92 582 92 582 56 706 56"></polyline>
+
+                <!-- the next level, and when mainnet reaches it -->
+                <path class="riser" d="M582 250 V56"></path>
+                <text class="tiny-a" x="586" y="248">≈5 TB</text>
+
+                <!-- hoodi pair: straddles a riser, so a level actually disappears -->
+                <circle class="pt-g" cx="114" cy="200" r="6.5"></circle>
+                <circle class="pt" cx="136" cy="164" r="6.5"></circle>
+                <path class="delta" d="M114 193 V158"></path>
+                <text class="tiny" x="150" y="160">hoodi</text>
+                <text class="tiny-g" x="150" y="206">archived hoodi</text>
+                <text class="tiny-g" x="150" y="228">−17.5% import time · one level gone</text>
+
+                <!-- mainnet pair: same plateau, so 27% off the size buys ~nothing -->
+                <circle class="pt-g" cx="291" cy="128" r="6.5"></circle>
+                <circle class="pt" cx="365" cy="128" r="6.5"></circle>
+                <path class="delta-flat" d="M291 128 H365"></path>
+                <text class="tiny-g" x="291" y="110" text-anchor="middle">archived mainnet</text>
+                <text class="tiny" x="376" y="122">mainnet</text>
+                <text class="tiny-a" x="330" y="150" text-anchor="middle">−27% size · same level · ≈1% slower</text>
+
+                <!-- where it starts paying again -->
+                <circle class="pt-a" cx="656" cy="56" r="6.5"></circle>
+                <text class="tiny-a" x="656" y="42" text-anchor="middle">mainnet, later</text>
+                <text class="tiny" x="656" y="76" text-anchor="middle">two levels up</text>
+            </svg>
+        </figure>
+        <ul class="bullet-list tight reveal" style="--i:3">
+            <li><span>The database keeps our trie inside <b>its own</b> tree — pages, levels, indexes. Cost per access tracks <b>that</b> depth, so it is logarithmic in DB size</span></li>
+            <li><span><b>Hoodi</b> is small enough to sit on the steep part: delete data and a whole level disappears</span></li>
+            <li><span><b>Mainnet's hot set alone is bigger than all of hoodi.</b> It is already on the flat part, so −27% of the bytes removes no level — and the little it gains is eaten by resurrections</span></li>
+            <li><span>That flips when mainnet crosses <b class="a">≈5 TB</b> and the next level lands: same archival, real speedup</span></li>
         </ul>
     </div>
     <div class="stamp">05 · Numbers</div>
@@ -1205,8 +1266,7 @@ layout: null
     <div class="slide-content">
         <div class="kicker reveal" style="--i:0">part 6 · the actual point</div>
         <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
-        <div class="callout reveal" style="--i:2">Same state root. Same blocks. Same consensus. <b>Nothing to negotiate.</b></div>
-        <ul class="bullet-list reveal" style="--i:3">
+        <ul class="bullet-list reveal" style="--i:2">
             <li><span>ACD tries to estimate the impact of a change before implementing it - this is a long and error-prone process</span></li>
             <li><span>Out-of-protocol: no fork window, no cross-client rollout</span></li>
             <li><span>The measurement comes first, and the EIP comes later with data already attached</span></li>
@@ -1401,8 +1461,8 @@ class InlineEditor {
         this.targets = Array.from(document.querySelectorAll(
             '.slide h1, .slide h2, .slide h3, .slide p, .slide li span, .slide .tag, ' +
             '.slide .kicker, .slide figcaption, .slide .stat .label, .slide .stat .value, ' +
-            '.slide .stat .delta, .slide .callout, .slide .stamp, .slide .bar-label, ' +
-            '.slide .bar-figs, .slide .slot-title'
+            '.slide .stat .delta, .slide .stamp, .slide .bar-label, ' +
+            '.slide .bar-figs'
         ));
 
         /* Keys are content-addressed, NOT positional.
