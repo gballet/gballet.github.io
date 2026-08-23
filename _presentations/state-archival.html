@@ -827,7 +827,7 @@ layout: null
                 <rect class="zone" x="78" y="44" width="180" height="182" rx="4"></rect>
                 <path class="edge dash-anim" d="M170 24 L170 52"></path>
                 <text class="lbl" x="182" y="32">from the root</text>
-                <path class="edge-g" d="M170 75 L128 103 M170 75 L212 103"></path>
+                <path class="edge" d="M170 75 L128 103 M170 75 L212 103"></path>
                 <path class="edge" d="M128 121 L106 152 M128 121 L150 152 M212 121 L192 152 M212 121 L234 152"></path>
                 <path class="edge" d="M106 167 V202 M150 167 V202 M192 167 V202 M234 167 V202"></path>
                 <circle class="nd-g" cx="170" cy="64" r="11"></circle>
@@ -851,23 +851,23 @@ layout: null
                 <path class="flow dashed" d="M184 62 L484 58"></path>
                 <text class="tiny-a" x="330" y="50" text-anchor="middle">the root is replaced</text>
 
-                <!-- 2. each LEAF is serialized and appended to ONE FLAT FILE:
-                     a single horizontal strip of consecutive records -->
-                <text class="lbl-g" x="585" y="146" text-anchor="middle">geth/nodearchive · one flat file</text>
-                <rect class="file" x="420" y="152" width="330" height="36" rx="3"></rect>
-                <rect class="rec" x="432" y="158" width="70" height="24"></rect>
-                <rect class="rec" x="510" y="158" width="70" height="24"></rect>
-                <rect class="rec" x="588" y="158" width="70" height="24"></rect>
-                <rect class="rec" x="666" y="158" width="70" height="24"></rect>
-                <text class="tiny-g" x="467" y="174" text-anchor="middle">leaf 1</text>
-                <text class="tiny-g" x="545" y="174" text-anchor="middle">leaf 2</text>
-                <text class="tiny-g" x="623" y="174" text-anchor="middle">leaf 3</text>
-                <text class="tiny-g" x="701" y="174" text-anchor="middle">leaf 4</text>
-                <path class="ser" d="M115 209 L463 186" marker-end="url(#arrow-g)"></path>
-                <path class="ser" d="M159 209 L541 186" marker-end="url(#arrow-g)"></path>
-                <path class="ser" d="M201 209 L619 186" marker-end="url(#arrow-g)"></path>
-                <path class="ser" d="M243 209 L697 186" marker-end="url(#arrow-g)"></path>
-                <text class="tiny-g" x="585" y="240" text-anchor="middle">appended in byte order, left to right</text>
+                <!-- 2. each LEAF is serialized and appended to ONE FLAT FILE.
+                     The file sits at leaf level; each record leaves its node
+                     upward, runs right along a shared bus, and drops into its
+                     slot from above: up, right, down — two square turns. -->
+                <rect class="file" x="556" y="196" width="136" height="36" rx="3"></rect>
+                <rect class="rec" x="569" y="202" width="18" height="18"></rect>
+                <rect class="rec" x="600" y="202" width="18" height="18"></rect>
+                <rect class="rec" x="630" y="202" width="18" height="18"></rect>
+                <rect class="rec" x="661" y="202" width="18" height="18"></rect>
+                <text class="lbl-g" x="624" y="246" text-anchor="middle">geth/nodearchive · one flat file</text>
+                <!-- one path per leaf, each turning at its own height so the
+                     leaf→record mapping stays traceable: leftmost leaf turns
+                     highest and lands leftmost -->
+                <path class="ser" d="M110 203 V169 H578 V193" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M154 203 V175 H609 V193" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M196 203 V181 H639 V193" marker-end="url(#arrow-g)"></path>
+                <path class="ser" d="M238 203 V187 H670 V193" marker-end="url(#arrow-g)"></path>
 
                 <!-- 3. the INTERNAL nodes go nowhere -->
                 <path class="gone-link" d="M221 112 L308 104"></path>
@@ -993,87 +993,7 @@ layout: null
 </section>
 
 <!-- =============================================================
-     PART 4 — WHAT CAN BE BUILT ON TOP
-     4.1 drop the archive file entirely
-     ============================================================= -->
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 4.1 · what this unlocks</div>
-        <h2 class="reveal" style="--i:1">Delete the file and you have <em>state expiry</em></h2>
-        <figure class="figure reveal" style="--i:2">
-            <svg class="diagram" viewBox="0 0 760 200" role="img" aria-label="The archive file is deleted. The stub node and the subtree root hash remain in the database, so the state root still computes, but the leaf data must come from a peer or a proof.">
-                <defs>
-                    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
-                    </marker>
-                </defs>
-                <!-- kept: stub + hash -->
-                <text class="lbl" x="14" y="20">KEPT · 17 bytes + the hash</text>
-                <circle class="nd" cx="120" cy="62" r="11"></circle>
-                <path class="edge-g" d="M131 70 L180 92"></path>
-                <rect class="stub" x="170" y="76" width="176" height="44" rx="3"></rect>
-                <text class="lbl" x="258" y="95" text-anchor="middle" style="fill:#f85149">expiredNode</text>
-                <text class="lbl" x="258" y="111" text-anchor="middle">subtree root hash</text>
-                <text class="lbl-g" x="120" y="140" text-anchor="middle">root still computes</text>
-
-                <!-- gone: the file -->
-                <text class="lbl" x="430" y="20">GONE · the bytes</text>
-                <rect class="file" x="420" y="60" width="170" height="62" rx="3" style="opacity:0.35"></rect>
-                <text class="lbl" x="505" y="82" text-anchor="middle" style="opacity:0.5">geth/nodearchive</text>
-                <path class="gone" d="M424 64 L586 118 M586 64 L424 118"></path>
-
-                <!-- refill path -->
-                <path class="flow" d="M690 92 L600 92" marker-end="url(#arrow2)"></path>
-                <text class="lbl-g" x="700" y="80">peer</text>
-                <text class="lbl-g" x="700" y="98">proof</text>
-                <text class="lbl-g" x="700" y="116">indexer</text>
-            </svg>
-            <figcaption>The stub carries the hash; the file only carried the bytes. Drop it and the node keeps validating everything that never touches those subtrees.</figcaption>
-        </figure>
-        <p class="note reveal" style="--i:3">What you give up is the ability to answer for that subtree — so something has to hand the leaves back, exactly like history: a peer, a proof, or a third party. <b class="a">This is the design space the PR opens, not what it implements today.</b></p>
-    </div>
-    <div class="stamp">04 · What to build</div>
-</section>
-
-<!-- =============================================================
-     PART 4.2 — EIP-8188: encoding
-     ============================================================= -->
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 4.2 · what this unlocks</div>
-        <h2 class="reveal" style="--i:1">EIP-8188: put the <em>write age</em> in the state</h2>
-        <div class="code reveal" style="--i:2">
-<pre><span class="c">// one new field, on every account and every slot</span>
-<span class="del">-</span> account    = RLP([nonce, balance, storageRoot, codeHash])
-<span class="s">+</span> account    = RLP([nonce, balance, storageRoot, codeHash, <span class="t">last_written_block</span>])
-
-<span class="del">-</span> slot_value = RLP(value)
-<span class="s">+</span> slot_value = RLP([value, <span class="t">last_written_block</span>])</pre>
-        </div>
-        <p class="code-caption reveal" style="--i:3">Old entries stay readable: a 4-element account decodes as <b class="g">0</b>, and a bare slot bytestring (<b>0x80+</b>) is told apart from the new list (<b>0xc0+</b>) by its RLP prefix. Hard fork, but <b class="g">no tree transition</b>.</p>
-    </div>
-    <div class="stamp">04 · What to build</div>
-</section>
-
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 4.2 · how it works</div>
-        <h2 class="reveal" style="--i:1">Written, <s>never read</s></h2>
-        <hr class="rule reveal-rule" style="--i:2">
-        <ul class="bullet-list reveal" style="--i:3">
-            <li><span>A write stamps <b>block_number</b> on the entry; writing twice in one block is idempotent</span></li>
-            <li><span>Storage writes cascade to the account — its <b>storageRoot</b> changed anyway</span></li>
-            <li><span>Reads never stamp: otherwise SLOAD becomes a write and <b class="r">STATICCALL</b> stops being static (EIP-214)</span></li>
-            <li><span>Reverts restore it like balance or nonce</span></li>
-            <li><span>Cost: <b class="a">5 bytes</b> per account, <b class="a">6</b> per slot — ~10.8 GB worst case, and only for state written post-fork</span></li>
-        </ul>
-        <p class="note reveal" style="--i:4">Then archival stops guessing which subtrees are cold: every client reads the same consensus-verified write age and picks the same set.</p>
-    </div>
-    <div class="stamp">04 · What to build</div>
-</section>
-
-<!-- =============================================================
-     PART 5 — MEASUREMENTS
+     PART 4 — MEASUREMENTS
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
@@ -1101,7 +1021,7 @@ layout: null
         </div>
         <p class="note reveal" style="--i:3">Hetzner dedicated, 12 cores / 22 GB RAM / 1TB SSD. Blocks 1,217,349 → 2,415,761 replayed on identical snapshots.</p>
     </div>
-    <div class="stamp">05 · Numbers</div>
+    <div class="stamp">04 · Numbers</div>
 </section>
 
 <!-- =============================================================
@@ -1134,7 +1054,7 @@ layout: null
         </div>
         <p class="note reveal" style="--i:3">Hoodi bought <b class="g">17.5%</b> of its import time; mainnet buys disk instead — that is not noise, and the next slide is the reason. Note the archive is stored <b class="a">raw</b>: the database compresses its pages, the archive file does not, so there is more size optimisation still on the table.</p>
     </div>
-    <div class="stamp">05 · Numbers</div>
+    <div class="stamp">04 · Numbers</div>
 </section>
 
 <!-- =============================================================
@@ -1146,7 +1066,7 @@ layout: null
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 5 · why they disagree</div>
+        <div class="kicker reveal" style="--i:0">part 4 · why they disagree</div>
         <h2 class="reveal" style="--i:1">Treeception: our tree lives in <em>its</em> tree</h2>
         <figure class="figure reveal" style="--i:2">
             <svg class="diagram plot" viewBox="0 0 760 300" role="img" aria-label="Database cost against database size. The curve is logarithmic: it rises in discrete steps as the internal database tree gains a level, steeply at small sizes and almost flat once the database is large. Archived hoodi sits one level below plain hoodi, a visible win. Archived mainnet and plain mainnet sit on the same plateau, so archiving 27 percent of the data barely changes cost. A future mainnet past roughly 5 terabytes sits two levels higher, where the same archival becomes worth much more.">
@@ -1200,15 +1120,15 @@ layout: null
             <li><span>That flips when mainnet crosses <b class="a">≈5 TB</b> and the next level lands: same archival, real speedup</span></li>
         </ul>
     </div>
-    <div class="stamp">05 · Numbers</div>
+    <div class="stamp">04 · Numbers</div>
 </section>
 
 <!-- =============================================================
-     PART 6 — OUT OF PROTOCOL BEATS IN PROTOCOL
+     PART 5 — OUT OF PROTOCOL BEATS IN PROTOCOL
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 6 · the actual point</div>
+        <div class="kicker reveal" style="--i:0">part 5 · the actual point</div>
         <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
         <ul class="bullet-list reveal" style="--i:2">
             <li><span>ACD tries to estimate the impact of a change before implementing it - this is a long and error-prone process</span></li>
@@ -1217,7 +1137,90 @@ layout: null
             <li><span>Consensus is the tool of last resort — for what genuinely needs it, like 8188's metadata</span></li>
         </ul>
     </div>
-    <div class="stamp">06 · Argument</div>
+    <div class="stamp">05 · Argument</div>
+</section>
+
+<!-- =============================================================
+     PART 6 — WHAT TO BUILD NEXT · 6.1 EIP-8188: encoding
+     ============================================================= -->
+<section class="slide">
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 6 · what to build next</div>
+        <h2 class="reveal" style="--i:1">EIP-8188: put the <em>write age</em> in the state</h2>
+        <div class="code reveal" style="--i:2">
+<pre><span class="c">// one new field, on every account and every slot</span>
+<span class="del">-</span> account    = RLP([nonce, balance, storageRoot, codeHash])
+<span class="s">+</span> account    = RLP([nonce, balance, storageRoot, codeHash, <span class="t">last_written_block</span>])
+
+<span class="del">-</span> slot_value = RLP(value)
+<span class="s">+</span> slot_value = RLP([value, <span class="t">last_written_block</span>])</pre>
+        </div>
+        <p class="code-caption reveal" style="--i:3">Old entries stay readable: a 4-element account decodes as <b class="g">0</b>, and a bare slot bytestring (<b>0x80+</b>) is told apart from the new list (<b>0xc0+</b>) by its RLP prefix. Hard fork, but <b class="g">no tree transition</b>.</p>
+    </div>
+    <div class="stamp">06 · What to build</div>
+</section>
+
+<section class="slide">
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 6 · how it works</div>
+        <h2 class="reveal" style="--i:1">Written, <s>never read</s></h2>
+        <hr class="rule reveal-rule" style="--i:2">
+        <ul class="bullet-list reveal" style="--i:3">
+            <li><span>A write stamps <b>block_number</b> on the entry; writing twice in one block is idempotent</span></li>
+            <li><span>Storage writes cascade to the account — its <b>storageRoot</b> changed anyway</span></li>
+            <li><span>Reads never stamp: otherwise SLOAD becomes a write and <b class="r">STATICCALL</b> stops being static (EIP-214)</span></li>
+            <li><span>Reverts restore it like balance or nonce</span></li>
+            <li><span>Cost: <b class="a">5 bytes</b> per account, <b class="a">6</b> per slot — ~10.8 GB worst case, and only for state written post-fork</span></li>
+        </ul>
+        <p class="note reveal" style="--i:4">Then archival stops guessing which subtrees are cold: every client reads the same consensus-verified write age and picks the same set.</p>
+    </div>
+    <div class="stamp">06 · What to build</div>
+</section>
+
+<!-- =============================================================
+     PART 6 — WHAT TO BUILD NEXT
+     6.2 drop the archive file entirely
+     ============================================================= -->
+<section class="slide">
+    <div class="slide-content">
+        <div class="kicker reveal" style="--i:0">part 6 · what to build next</div>
+        <h2 class="reveal" style="--i:1">Delete the file and you have <em>state expiry</em></h2>
+        <figure class="figure reveal" style="--i:2">
+            <svg class="diagram" viewBox="0 0 760 200" role="img" aria-label="On the left, the archival state: an expiredNode stub of 17 bytes together with the flat archive file holding the leaf records. An arrow labelled expiry points right. On the right, only the expiredNode stub remains — the archive file is gone. That is state expiry.">
+                <defs>
+                    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3b341"></path>
+                    </marker>
+                </defs>
+
+                <!-- BEFORE: exactly the end state of the swap slide —
+                     the stub in the DB plus the flat file on disk -->
+                <rect class="stub" x="60" y="36" width="200" height="44" rx="3"></rect>
+                <text class="lbl" x="160" y="54" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <text class="lbl" x="160" y="70" text-anchor="middle">offset + size · 17 B</text>
+                <path class="ser" d="M160 84 V106"></path>
+                <rect class="file" x="92" y="110" width="136" height="36" rx="3"></rect>
+                <rect class="rec" x="105" y="116" width="18" height="18"></rect>
+                <rect class="rec" x="136" y="116" width="18" height="18"></rect>
+                <rect class="rec" x="166" y="116" width="18" height="18"></rect>
+                <rect class="rec" x="197" y="116" width="18" height="18"></rect>
+                <text class="lbl-g" x="160" y="178" text-anchor="middle">state archival</text>
+
+                <!-- delete the file -->
+                <path class="flow dashed" d="M290 91 L450 91" marker-end="url(#arrow2)"></path>
+                <text class="lbl-a" x="370" y="79" text-anchor="middle">expiry</text>
+
+                <!-- AFTER: the stub is all that is left -->
+                <rect class="stub" x="480" y="36" width="200" height="44" rx="3"></rect>
+                <text class="lbl" x="580" y="54" text-anchor="middle" style="fill:#f85149">expiredNode</text>
+                <text class="lbl" x="580" y="70" text-anchor="middle">offset + size · 17 B</text>
+                <text class="lbl-g" x="580" y="178" text-anchor="middle">state expiry</text>
+            </svg>
+            <figcaption>The stub carries the hash; the file only carried the bytes. Drop it and the node keeps validating everything that never touches those subtrees.</figcaption>
+        </figure>
+        <p class="note reveal" style="--i:3">What you give up is the ability to answer for that subtree — so something has to hand the leaves back, exactly like history: a peer, a proof, or a third party. <b class="a">This is the design space the PR opens, not what it implements today.</b></p>
+    </div>
+    <div class="stamp">06 · What to build</div>
 </section>
 
 <!-- =============================================================
