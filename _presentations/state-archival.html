@@ -541,18 +541,6 @@ layout: null
         border: 1px solid var(--hair);
         background: var(--bg-lift);
     }
-    .figure.wide { align-items: center; }
-    .figure.wide img {
-        /* this figure IS the slide, but the heading, caption and slide padding
-           still have to fit: 72vh is the largest that clears them at 16:9. */
-        max-height: min(72vh, 720px);
-        border-color: var(--green-dim);
-        box-shadow: 0 0 clamp(18px, 3vw, 46px) rgba(0, 0, 0, 0.6);
-    }
-    /* "plate" slides: one big figure, heading demoted so the image dominates */
-    .slide.plate .slide-content { gap: clamp(0.25rem, 0.8vh, 0.6rem); }
-    .slide.plate h2 { font-size: var(--h3-size); color: var(--text); letter-spacing: 0; }
-    .figure.wide figcaption { text-align: center; }
     .figure-slot {
         width: min(88vw, 900px);
         height: min(42vh, 340px);
@@ -1124,28 +1112,11 @@ layout: null
 </section>
 
 <!-- =============================================================
-     PART 5 — OUT OF PROTOCOL BEATS IN PROTOCOL
+     PART 5 — WHAT TO BUILD NEXT · 5.1 EIP-8188: encoding
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 5 · the actual point</div>
-        <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
-        <ul class="bullet-list reveal" style="--i:2">
-            <li><span>ACD tries to estimate the impact of a change before implementing it - this is a long and error-prone process</span></li>
-            <li><span>Out-of-protocol: no fork window, no cross-client rollout</span></li>
-            <li><span>The measurement comes first, and the EIP comes later with data already attached</span></li>
-            <li><span>Consensus is the tool of last resort — for what genuinely needs it, like 8188's metadata</span></li>
-        </ul>
-    </div>
-    <div class="stamp">05 · Argument</div>
-</section>
-
-<!-- =============================================================
-     PART 6 — WHAT TO BUILD NEXT · 6.1 EIP-8188: encoding
-     ============================================================= -->
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 6 · what to build next</div>
+        <div class="kicker reveal" style="--i:0">part 5 · what to build next</div>
         <h2 class="reveal" style="--i:1">EIP-8188: put the <em>write age</em> in the state</h2>
         <div class="code reveal" style="--i:2">
 <pre><span class="c">// one new field, on every account and every slot</span>
@@ -1157,12 +1128,12 @@ layout: null
         </div>
         <p class="code-caption reveal" style="--i:3">Old entries stay readable: a 4-element account decodes as <b class="g">0</b>, and a bare slot bytestring (<b>0x80+</b>) is told apart from the new list (<b>0xc0+</b>) by its RLP prefix. Hard fork, but <b class="g">no tree transition</b>.</p>
     </div>
-    <div class="stamp">06 · What to build</div>
+    <div class="stamp">05 · What to build</div>
 </section>
 
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 6 · how it works</div>
+        <div class="kicker reveal" style="--i:0">part 5 · how it works</div>
         <h2 class="reveal" style="--i:1">Written, <s>never read</s></h2>
         <hr class="rule reveal-rule" style="--i:2">
         <ul class="bullet-list reveal" style="--i:3">
@@ -1174,17 +1145,17 @@ layout: null
         </ul>
         <p class="note reveal" style="--i:4">Then archival stops guessing which subtrees are cold: every client reads the same consensus-verified write age and picks the same set.</p>
     </div>
-    <div class="stamp">06 · What to build</div>
+    <div class="stamp">05 · What to build</div>
 </section>
 
 <!-- =============================================================
-     PART 6 — WHAT TO BUILD NEXT
-     6.2 drop the archive file entirely
+     PART 5 — WHAT TO BUILD NEXT
+     5.2 drop the archive file entirely
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 6 · what to build next</div>
-        <h2 class="reveal" style="--i:1">Delete the file and you have <em>state expiry</em></h2>
+        <div class="kicker reveal" style="--i:0">part 5 · what to build next</div>
+        <h2 class="reveal" style="--i:1">A stepping stone to <em>state expiry</em></h2>
         <figure class="figure reveal" style="--i:2">
             <svg class="diagram" viewBox="0 0 760 200" role="img" aria-label="On the left, the archival state: an expiredNode stub of 17 bytes together with the flat archive file holding the leaf records. An arrow labelled expiry points right. On the right, only the expiredNode stub remains — the archive file is gone. That is state expiry.">
                 <defs>
@@ -1218,77 +1189,48 @@ layout: null
             </svg>
             <figcaption>The stub carries the hash; the file only carried the bytes. Drop it and the node keeps validating everything that never touches those subtrees.</figcaption>
         </figure>
-        <p class="note reveal" style="--i:3">What you give up is the ability to answer for that subtree — so something has to hand the leaves back, exactly like history: a peer, a proof, or a third party. <b class="a">This is the design space the PR opens, not what it implements today.</b></p>
-    </div>
-    <div class="stamp">06 · What to build</div>
-</section>
-
-<!-- =============================================================
-     PART 7 — THE STRAWMAP
-     Image: strawmap.org (Google Drawing export), EF Architecture's
-     draft L1 roadmap. Local copy in assets/ so it travels with the
-     deck for PDF export and offline presenting.
-     ============================================================= -->
-<section class="slide plate">
-    <div class="slide-content">
-        <h2 class="reveal" style="--i:0">Meanwhile, the strawmap</h2>
-        <figure class="figure wide reveal" style="--i:1">
-            <img src="assets/strawmap.png" alt="The Ethereum L1 strawmap: three swimlanes for consensus, data and execution layers, with dozens of linked boxes spread across columns from 2026 through longer term and north stars.">
-            <figcaption>strawmap.org — EF Architecture's draft L1 roadmap, updated Aug 20 2026. Three layers, columns from Glamsterdam out to "north stars".</figcaption>
-        </figure>
-    </div>
-    <div class="stamp">07 · Strawmap</div>
-</section>
-
-<section class="slide">
-    <div class="slide-content">
-        <div class="kicker reveal" style="--i:0">part 7 · the strawmap</div>
-        <h2 class="reveal" style="--i:1">Too big to <s>care</s> about</h2>
-        <hr class="rule reveal-rule" style="--i:2">
-        <ul class="bullet-list reveal" style="--i:3">
-            <li><span>Three layers, dozens of boxes, columns running out to <b>"longer term"</b> and <b>"north stars"</b></span></li>
-            <li><span>Its own legend admits it: a dedicated <b class="a">"uncertainty about ever shipping upgrade"</b> emoji, and "strawman: work-in-progress rough consensus"</span></li>
-            <li><span>Everything reads as blocked on everything — post-quantum, leanEVM, partitioned binary tree, endgame state</span></li>
-            <li><span>Users feel none of it. They feel sync time, disk, and fees</span></li>
-            <li><span>What you just saw is <b class="g">not on that chart</b>, needed no fork, and is already faster</span></li>
+        <ul class="bullet-list tight reveal" style="--i:3">
+            <li><span>Shipping state expiry has been <b>notoriously hard</b> — we have been trying since 2018</span></li>
+            <li><span><b>EIP-8188</b> signals what is old enough: nodes know what is unlikely to be accessed</span></li>
+            <li><span>It also allows <b class="a">charging extra</b> for access to data so old it is likely expired</span></li>
+            <li><span>Clients can <b class="g">experiment</b> — and once the best solution is found, it can be enshrined in the protocol</span></li>
         </ul>
-        <p class="note reveal" style="--i:4">Research-y roadmaps are a coordination artefact, not a delivery mechanism. History expiry is the tell: the EIP still says Stagnant, and clients shipped it anyway.</p>
     </div>
-    <div class="stamp">07 · Strawmap</div>
+    <div class="stamp">05 · What to build</div>
 </section>
 
 <!-- =============================================================
-     CLOSE
+     PART 6 — THE ACTUAL POINT · closing slide
+     The strawmap (strawmap.org, local copy in assets/) sits on the
+     right as the visual counter-argument; the bullets carry the
+     out-of-protocol case. This is the slide the talk ends on.
      ============================================================= -->
 <section class="slide">
     <div class="slide-content">
-        <h1 class="reveal" style="--i:0">Experiment outside.<br>Then <em>show up</em>.<span class="cursor"></span></h1>
-        <hr class="rule reveal-rule" style="--i:1">
+        <div class="kicker reveal" style="--i:0">part 6 · the actual point</div>
+        <h2 class="reveal" style="--i:1">Out of protocol <em>beats</em> in protocol</h2>
         <div class="cols reveal" style="--i:2">
-            <div class="col now">
-                <h3>EXPERIMENT OUT OF PROTOCOL</h3>
+            <div style="display:flex;flex-direction:column;gap:var(--content-gap)">
                 <ul class="bullet-list tight">
-                    <li><span>No fork, no EIP, no permission — one client, one flag, one disk</span></li>
-                    <li><span>Measure on a real chain: hoodi and mainnet disagreed, and only the data said why</span></li>
-                    <li><span>Bring numbers to the EIP instead of estimates to a call</span></li>
+                    <li><span><b class="a">Castle-in-the-sky research</b> cannot be the main driver of protocol upgrades</span></li>
+                    <li><span>Much can be improved <b>outside the protocol</b> — if core devs are given the time for it</span></li>
+                    <li><span>Users need a <b class="g">stronger voice</b> in the design process</span></li>
+                    <li><span>Protocol changes take years; experimenting first cuts the time spent guessing</span></li>
+                    <li><span>Decentralisation can still work — <b class="g">with discipline</b></span></li>
                 </ul>
+                <div class="tags">
+                    <span class="tag">github.com/ethereum/go-ethereum/pull/33906</span>
+                    <span class="tag amber">EIP-8188</span>
+                    <span class="tag plain">@gballet</span>
+                </div>
             </div>
-            <div class="col ask">
-                <h3>THEN GO READ THE ROADMAP</h3>
-                <ul class="bullet-list tight">
-                    <li><span>It is a strawman with rough consensus — which means it is still movable</span></li>
-                    <li><span>It is <b class="a">disconnected from what people actually want</b>: sync time, disk, fees</span></li>
-                    <li><span>Clients and stakeholders: participate. Silence gets counted as agreement</span></li>
-                </ul>
-            </div>
-        </div>
-        <div class="tags reveal" style="--i:3">
-            <span class="tag">github.com/ethereum/go-ethereum/pull/33906</span>
-            <span class="tag amber">EIP-8188</span>
-            <span class="tag plain">@gballet</span>
+            <figure class="figure reveal" style="--i:3">
+                <img src="assets/strawmap.png" alt="The Ethereum L1 strawmap: three swimlanes for consensus, data and execution layers, with dozens of linked boxes spread across columns from 2026 through longer term and north stars.">
+                <figcaption>strawmap.org — the draft L1 roadmap, five years of boxes.</figcaption>
+            </figure>
         </div>
     </div>
-    <div class="stamp">Thanks · questions</div>
+    <div class="stamp">Questions</div>
 </section>
 
 <script>
