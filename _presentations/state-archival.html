@@ -721,6 +721,7 @@ layout: null
             <li><span>Those writes land <b class="a">scattered</b> across a keyspace that is mostly cold</span></li>
             <li><span>LSM compaction and page copy-on-write then rewrite far more bytes than the block changed</span></li>
             <li><span>So per-block cost tracks <b class="r">total state size</b>, not the size of the change</span></li>
+            <li><span>The current state size is <b>~300 GB</b> — but we are planning for <b class="a">5 TB</b></span></li>
         </ul>
         <p class="note reveal" style="--i:4">Scale, early 2026: ~360M accounts, ~1.5B storage slots (figures from EIP-8188's rationale).</p>
     </div>
